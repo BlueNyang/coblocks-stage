@@ -57,12 +57,12 @@ export interface BaseObject {
   x: number;
   y: number;
 
-  setState(state: ObjectState): void; // Sets the state of the object
-  isValidState(state: ObjectState): boolean;
-  getImage(): any | null; // 실제 이미지 타입에 따라 변경 (예: HTMLImageElement | null)
-  getIcon(): any | null; // 실제 아이콘 타입에 따라 변경
-  isPassable(character: Character): boolean; // character 타입에 따라 변경
-  toJSON(): object;
+  setState: (state: ObjectState) => void; // Sets the state of the object
+  isValidState: (state: ObjectState) => boolean;
+  getImage: () => any | null; // 실제 이미지 타입에 따라 변경 (예: HTMLImageElement | null)
+  getIcon: () => any | null; // 실제 아이콘 타입에 따라 변경
+  isPassable: (character: Character) => boolean; // character 타입에 따라 변경
+  toJSON: () => object;
 }
 
 /**
@@ -92,7 +92,7 @@ export interface IInteractable extends BaseObject {
 
   readonly relatedObjects: IInteractable[];
 
-  interact(): void;
+  interact: () => void;
 }
 
 /**
@@ -108,10 +108,10 @@ export interface IInteractable extends BaseObject {
 export interface ICollectible extends BaseObject {
   collected: boolean;
 
-  collect(character: Character): void;
-  drop(character: Character, x: number, y: number): void;
-  isCollected(): boolean;
-  setCollected(collected: boolean): void;
+  collect: (character: Character) => void;
+  drop: (character: Character, x: number, y: number) => void;
+  isCollected: () => boolean;
+  setCollected: (collected: boolean) => void;
 }
 
 /**
@@ -148,17 +148,40 @@ export interface ObjectOptions {
  * @interface InteractableObjectOptions
  * @description Options for creating an InteractableObject
  * @author [BlueNyang]
- * @property id - Unique identifier for the object
- * @property type - Type of the object (e.g., 'tree', 'rock')
- * @property x - X coordinate of the object
- * @property y - Y coordinate of the object
- * @property state - Optional state of the object, defaults to a predefined state
  * @property relatedObjects - Array of related objects that can be interacted with
+ * @example
+ * const interactableOptions: InteractableObjectOptions = {
+ *  id: 'interactable1',
+ *  type: 'button',
+ *  x: 200,
+ *  y: 300,
+ *  stateList: ['default', 'pressed'],
+ *  state: 'default',
+ *  canPass: true,
+ *  relatedObjects: []
+ * };
  */
 export interface InteractableObjectOptions extends ObjectOptions {
   readonly relatedObjects: IInteractable[]; // Optional, defaults to an empty array
 }
 
+/**
+ * @interface CollectibleObjectOptions
+ * @description Options for creating a CollectibleObject
+ * @author [BlueNyang]
+ * @property collected - Indicates whether the object has been collected, defaults to false
+ * @example
+ * const collectibleOptions: CollectibleObjectOptions = {
+ *  id: 'collectible1',
+ *  type: 'coin',
+ *  x: 150,
+ *  y: 250,
+ *  stateList: ['default', 'collected'],
+ *  state: 'default',
+ *  canPass: true,
+ *  collected: false
+ * };
+ */
 export interface CollectibleObjectOptions extends ObjectOptions {
   collected?: boolean; // Optional, defaults to false
 }

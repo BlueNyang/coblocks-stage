@@ -16,11 +16,15 @@ import { ObjectID } from "@/types/objects";
  * };
  */
 export interface Character {
-  id: number;
-  name: string;
+  readonly id: number;
+  readonly name: string;
   inventory: ObjectID[];
   position: { x: number; y: number };
   direction: CharacterDirection;
+
+  addToInventory: (itemId: ObjectID) => void;
+  removeFromInventory: (itemId: ObjectID) => void;
+  setDirection: (direction: CharacterDirection) => void;
 }
 
 /**

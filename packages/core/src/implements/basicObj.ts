@@ -7,6 +7,7 @@ import type {
   ObjectState,
   StateList,
 } from "@/types/objects";
+import { InvalidObjectStateError, CannotCollectError, CannotDropError } from "@/errors/objError";
 import { Character } from "@/types/character";
 
 /**
@@ -44,7 +45,7 @@ export class InteractableObject implements IInteractable {
   readonly id: string;
   readonly type: string;
   readonly relatedObjects: IInteractable[] = [];
-  readonly stateList: ObjectState[];
+  readonly stateList: StateList;
 
   /**
    * @constructor
@@ -68,16 +69,22 @@ export class InteractableObject implements IInteractable {
    * @description Sets a new state for the object if it is valid.
    * @author [BlueNyang]
    * @param {ObjectState} newState - The new state to set for the object
-   * @throws {Error} If the new state is not valid for the object type
+   * @throws {InvalidObjectStateError} If the new state is not valid for this object
    * @example
-   *  const success = interactableObject.setState('pressed');
+   *  try {
+   *    interactableObject.setState('pressed');
+   *  } catch (error) {
+   *    if (error instanceof InvalidObjectStateError) {
+   *      console.error(error.message);
+   *    }
+   *  }
    */
   setState(newState: ObjectState): void {
     if (this.isValidState(newState)) {
       this.state = newState;
     } else {
       console.warn(`Invalid state: ${newState} for object type: ${this.type}`);
-      throw new Error(`Invalid state: ${newState} for object type: ${this.type}`);
+      throw new InvalidObjectStateError(`Invalid state: ${newState} for object type: ${this.type}`);
     }
   }
 
@@ -94,9 +101,11 @@ export class InteractableObject implements IInteractable {
   }
 
   getImage(): any | null {
+    console.warn("getImage() method should be overridden in subclasses");
     return null;
   }
   getIcon(): any | null {
+    console.warn("getIcon() method should be overridden in subclasses");
     return null;
   }
 
@@ -183,7 +192,7 @@ export class CollectibleObject implements ICollectible {
 
   readonly id: string;
   readonly type: string;
-  readonly stateList: ObjectState[];
+  readonly stateList: StateList;
 
   /**
    * @constructor
@@ -200,31 +209,166 @@ export class CollectibleObject implements ICollectible {
     this.collected = options.collected || false;
   }
 
+  /**
+   * @description Sets a new state for the object if it is valid.
+   * @author [BlueNyang]
+   * @param {ObjectState} state - The new state to set for the object
+   * @throws {InvalidObjectStateError} If the new state is not valid for this object
+   * @example
+   *  try {
+   *    collectibleObject.setState('collected');
+   *  } catch (error) {
+   *    if (error instanceof InvalidObjectStateError) {
+   *      console.error(error.message);
+   *    }
+   *  }
+   */
   setState(state: ObjectState): void {
     if (this.isValidState(state)) {
       this.state = state;
     } else {
       console.warn(`Invalid state: ${state} for object type: ${this.type}`);
-      throw new Error(`Invalid state: ${state} for object type: ${this.type}`);
+      throw new InvalidObjectStateError(`Invalid state: ${state} for object type: ${this.type}`);
     }
   }
 
+  /**
+   * @description Checks if the provided state is valid for this object.
+   * @author [BlueNyang]
+   * @param {ObjectState} state - The state to check for validity
+   * @returns {boolean} True if the state is valid, false otherwise
+   * @example
+   *  const isValid = collectibleObject.isValidState('collected');
+   */
   isValidState(state: ObjectState): boolean {
     return this.stateList.includes(state);
   }
 
-  getImage() {
-    throw new Error("Method not implemented.");
+  /**
+   * @description Gets the image associated with the object.
+   * This method should be overridden in subclasses to provide specific images.
+   * @author [BlueNyang]
+   * @returns {any | null} The image associated with the object, or null if not available
+   * @example
+   *  const image = collectibleObject.getImage();
+   */
+  getImage(): any | null {
+    console.warn("getImage() method should be overridden in subclasses");
+    return null;
   }
 
-  getIcon() {
-    throw new Error("Method not implemented.");
+  /**
+   * @description Gets the icon associated with the object.
+   * This method should be overridden in subclasses to provide specific icons.
+   * @author [BlueNyang]
+   * @returns {any | null} The icon associated with the object, or null if not available
+   * @example
+   *  const icon = collectibleObject.getIcon();
+   */
+  getIcon(): any | null {
+    console.warn("getIcon() method should be overridden in subclasses");
+    return null;
   }
 
+  /**
+   * @description Checks if the object is passable by a character.
+   * This method can be customized based on character properties.
+   * @author [BlueNyang]
+   * @param {Character} character - The character attempting to pass through the object
+   * @returns {boolean} True if the object is passable, false otherwise
+   * @example
+   *  const canPass = collectibleObject.isPassable(character);
+   */
   isPassable(character: Character): boolean {
+    // This method can be customized based on character properties
+    console.warn("isPassable() method should be overridden in subclasses");
     return this.canPass;
   }
 
+  /**
+   * @description Collects the object, adding it to the character's inventory.
+   * @author [BlueNyang]
+   * @param {Character} character - The character collecting the object
+   * @throws {CannotCollectError} If the object is already collected
+   * @example
+   *  try {
+   *    collectibleObject.collect(character);
+   *  } catch (error) {
+   *    if (error instanceof CannotCollectError) {
+   *      console.error(error.message);
+   *    }
+   *  }
+   */
+  collect(character: Character): void {
+    if (this.isCollected()) {
+      console.warn(`${this.type} is already collected.`);
+      throw new CannotCollectError(`${this.type} is already collected.`);
+    }
+
+    this.setCollected(true);
+    character.addToInventory(this.id);
+  }
+
+  /**
+   * @description Drops the object, removing it from the character's inventory and placing it at a specified position.
+   * @author [BlueNyang]
+   * @param {Character} character - The character dropping the object
+   * @param {number} x - X coordinate to drop the object
+   * @param {number} y - Y coordinate to drop the object
+   * @throws {CannotDropError} If the object is not collected
+   * @example
+   *  try {
+   *    collectibleObject.drop(character, 100, 200);
+   *  } catch (error) {
+   *    if (error instanceof CannotDropError) {
+   *      console.error(error.message);
+   *    }
+   *  }
+   */
+  drop(character: Character, x: number, y: number): void {
+    if (!this.isCollected()) {
+      console.warn(`${this.type} is not collected and cannot be dropped.`);
+      throw new CannotDropError(`${this.type} is not collected and cannot be dropped.`);
+    }
+
+    this.setCollected(false);
+    // Remove the object from the character's inventory
+    character.removeFromInventory(this.id);
+    this.x = x;
+    this.y = y;
+    console.log(`${character.name} dropped ${this.type} at (${x}, ${y})`);
+  }
+
+  /**
+   * @description Checks if the object has been collected.
+   * @author [BlueNyang]
+   * @returns {boolean} True if the object is collected, false otherwise
+   * @example
+   *  const isCollected = collectibleObject.isCollected();
+   */
+  isCollected(): boolean {
+    return this.collected;
+  }
+
+  /**
+   * @description Sets the collected state of the object.
+   * @author [BlueNyang]
+   * @param {boolean} collected - The new collected state to set
+   * @example
+   *  collectibleObject.setCollected(true);
+   */
+  setCollected(collected: boolean): void {
+    this.collected = collected;
+  }
+
+  /**
+   * @description Converts the object to a JSON representation.
+   * @author [BlueNyang]
+   * @returns {object} JSON representation of the object
+   * @example
+   *  const json = collectibleObject.toJSON();
+   *  console.log(json);
+   */
   toJSON(): object {
     return {
       id: this.id,
@@ -234,21 +378,5 @@ export class CollectibleObject implements ICollectible {
       state: this.state,
       collected: this.collected,
     };
-  }
-
-  collect(character: Character): void {
-    this.collected = true;
-    character.inventory.push(this.id);
-  }
-
-  drop(character: Character, x: number, y: number): void {
-    throw new Error("Method not implemented.");
-  }
-
-  isCollected(): boolean {
-    throw new Error("Method not implemented.");
-  }
-  setCollected(collected: boolean): void {
-    throw new Error("Method not implemented.");
   }
 }
