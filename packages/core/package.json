@@ -1,0 +1,52 @@
+{
+  "name": "@coblocks-stage/core",
+  "version": "0.3.0",
+  "description": "Stage lib for coblocks",
+  "author": "BlueNyang",
+  "main": "dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "prepublish": "npm run build"
+  },
+  "devDependencies": {
+    "@rollup/plugin-commonjs": "^28.0.6",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-terser": "^0.4.4",
+    "@rollup/plugin-typescript": "^12.1.4",
+    "@types/node": "^24.1.0",
+    "@vitest/ui": "^3.2.4",
+    "jsdom": "^26.1.0",
+    "rollup": "^4.45.1",
+    "rollup-plugin-dts": "^6.2.1",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  },
+  "license": "MIT",
+  "keywords": [
+    "coblocks",
+    "stage",
+    "library"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
