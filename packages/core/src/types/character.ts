@@ -1,19 +1,7 @@
 import { ObjectID } from "@/types/objects";
 
 /**
- * @description Chracter Class to be the subject of interactions in the running time.
- * @author [BlueNyang]
- * @property id - Unique identifier for the character
- * @property name - Name of the character
- * @property inventory - Array of collectable items the character has
- * @property position - Position of the character in the game world
- * @property direction - Direction the character is facing
- * @example
- * const character: Character = {
- *   id: 1,
- *   name: 'Hero',
- *   position: { x: 0, y: 0 },
- * };
+ * Character interface for game interactions
  */
 export interface Character {
   readonly id: number;
@@ -22,16 +10,12 @@ export interface Character {
   position: { x: number; y: number };
   direction: CharacterDirection;
 
-  addToInventory: (itemId: ObjectID) => void;
-  removeFromInventory: (itemId: ObjectID) => void;
-  setDirection: (direction: CharacterDirection) => void;
+  addToInventory(itemId: ObjectID): void;
+  removeFromInventory(itemId: ObjectID): void;
+  setDirection(direction: CharacterDirection): void;
 }
 
-/**
- * @enum CharacterDirection
- * @description Enumeration for character movement directions
- * @author [BlueNyang]
- */
+/** Character movement directions */
 export enum CharacterDirection {
   UP = "up",
   DOWN = "down",
