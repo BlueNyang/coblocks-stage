@@ -13,6 +13,13 @@ export interface Character {
   addToInventory(itemId: ObjectID): void;
   removeFromInventory(itemId: ObjectID): void;
   setDirection(direction: CharacterDirection): void;
+  moveTo(x: number, y: number): void;
+  interactWith(objectId: ObjectID): void;
+  getInventory(): ObjectID[];
+  getPosition(): { x: number; y: number };
+  getDirection(): CharacterDirection;
+  toJSON(): object;
+  fromJSON(data: object): void;
 }
 
 /** Character movement directions */

@@ -8,7 +8,7 @@ import type {
 } from "@/types/objects";
 import { InvalidObjectStateError, CannotCollectError, CannotDropError } from "@/errors/objError";
 import { Character } from "@/types/character";
-import { ObjectCallbacks } from "@/types/callbacks";
+import { InteractableObjectCallbacks, CollectibleObjectCallbacks } from "@/types/callbacks";
 
 /**
  * Object that can be interacted with by characters
@@ -24,14 +24,14 @@ export class InteractableObject implements IInteractable {
   readonly type: string;
   readonly relatedObjects: IInteractable[] = [];
   readonly stateList: StateList;
-  readonly callbacks: ObjectCallbacks;
+  readonly callbacks: InteractableObjectCallbacks;
 
   constructor(options: InteractableObjectOptions) {
     this.id = options.id;
     this.type = options.type;
     this.relatedObjects = options.relatedObjects;
     this.stateList = options.stateList || [];
-    this.callbacks = options.callbacks || ({} as ObjectCallbacks);
+    this.callbacks = options.callbacks || ({} as InteractableObjectCallbacks);
 
     this.x = options.x;
     this.y = options.y;
@@ -42,7 +42,14 @@ export class InteractableObject implements IInteractable {
 
   setState(newState: ObjectState): void {
     if (this.isValidState(newState)) {
+      const oldState = this.state;
       this.state = newState;
+
+      if (this.callbacks.onStateChange) {
+        this.callbacks.onStateChange(this, oldState, newState);
+      } else {
+        console.warn(`State change callback not defined for object type: ${this.type}`);
+      }
     } else {
       console.warn(`Invalid state: ${newState} for object type: ${this.type}`);
       throw new InvalidObjectStateError(`Invalid state: ${newState} for object type: ${this.type}`);
@@ -50,21 +57,40 @@ export class InteractableObject implements IInteractable {
   }
 
   isValidState(state: ObjectState): boolean {
-    return this.stateList && this.stateList.includes(state);
+    return this.stateList.includes(state);
   }
 
   getImage(): any | null {
-    console.warn("getImage() method should be overridden in subclasses");
+    if (this.callbacks.onGetImage) {
+      return this.callbacks.onGetImage(this);
+    }
     return null;
   }
 
   getIcon(): any | null {
-    console.warn("getIcon() method should be overridden in subclasses");
+    if (this.callbacks.onGetIcon) {
+      return this.callbacks.onGetIcon(this);
+    }
     return null;
   }
 
   isPassable(_character: Character): boolean {
+    if (this.callbacks.onIsPassable) {
+      return this.callbacks.onIsPassable(this, _character);
+    }
     return this.canPass;
+  }
+
+  interact(): void {
+    this.relatedObjects.forEach((obj) => {
+      if (typeof obj.interact === "function") {
+        obj.interact();
+      }
+    });
+
+    if (this.callbacks.onInteract) {
+      this.callbacks.onInteract(this);
+    }
   }
 
   toJSON(): object {
@@ -75,16 +101,6 @@ export class InteractableObject implements IInteractable {
       y: this.y,
       state: this.state,
     };
-  }
-
-  interact(): void {
-    this.relatedObjects.forEach((obj) => {
-      if (typeof obj.interact === "function") {
-        obj.interact();
-      }
-    });
-
-    console.warn(`${this.type} object should override interact() method for custom behavior`);
   }
 }
 
@@ -101,13 +117,13 @@ export class CollectibleObject implements ICollectible {
   readonly id: string;
   readonly type: string;
   readonly stateList: StateList;
-  readonly callbacks: ObjectCallbacks;
+  readonly callbacks: CollectibleObjectCallbacks;
 
   constructor(options: CollectibleObjectOptions) {
     this.id = options.id;
     this.type = options.type;
     this.stateList = options.stateList || [];
-    this.callbacks = options.callbacks || ({} as ObjectCallbacks);
+    this.callbacks = options.callbacks || ({} as CollectibleObjectCallbacks);
 
     this.x = options.x;
     this.y = options.y;
@@ -118,7 +134,13 @@ export class CollectibleObject implements ICollectible {
 
   setState(state: ObjectState): void {
     if (this.isValidState(state)) {
+      const oldState = this.state;
       this.state = state;
+      if (this.callbacks.onStateChange) {
+        this.callbacks.onStateChange(this, oldState, state);
+      } else {
+        console.warn(`State change callback not defined for object type: ${this.type}`);
+      }
     } else {
       console.warn(`Invalid state: ${state} for object type: ${this.type}`);
       throw new InvalidObjectStateError(`Invalid state: ${state} for object type: ${this.type}`);
@@ -130,18 +152,24 @@ export class CollectibleObject implements ICollectible {
   }
 
   getImage(): any | null {
-    console.warn("getImage() method should be overridden in subclasses");
+    if (this.callbacks.onGetImage) {
+      return this.callbacks.onGetImage(this);
+    }
     return null;
   }
 
   getIcon(): any | null {
-    console.warn("getIcon() method should be overridden in subclasses");
+    if (this.callbacks.onGetIcon) {
+      return this.callbacks.onGetIcon(this);
+    }
     return null;
   }
 
   isPassable(character: Character): boolean {
     // This method can be customized based on character properties
-    console.warn("isPassable() method should be overridden in subclasses");
+    if (this.callbacks.onIsPassable) {
+      return this.callbacks.onIsPassable(this, character);
+    }
     return this.canPass;
   }
 
@@ -166,7 +194,10 @@ export class CollectibleObject implements ICollectible {
     character.removeFromInventory(this.id);
     this.x = x;
     this.y = y;
-    console.log(`${character.name} dropped ${this.type} at (${x}, ${y})`);
+
+    if (this.callbacks.onDrop) {
+      this.callbacks.onDrop(this, character, x, y);
+    }
   }
 
   isCollected(): boolean {

@@ -1,21 +1,26 @@
 import { Character } from "@/types/character";
-import { ObjectCallbacks } from "@/types/callbacks";
+import { InteractableObjectCallbacks, CollectibleObjectCallbacks } from "@/types/callbacks";
 
 /** Object state identifier */
 export type ObjectState = string;
-
 /** List of available object states */
 export type StateList = ObjectState[];
-
 /** Unique object identifier */
 export type ObjectID = string;
+
+export type StageObjects = IInteractable | ICollectible;
+export type StageObjectOptions = InteractableObjectOptions | CollectibleObjectOptions;
+
+/** Constructor type for creating BaseObject instances */
+export type ObjectConstructor<T extends ObjectOptions = ObjectOptions> = new (
+  options: T
+) => BaseObject;
 
 /** Base interface for all game objects */
 export interface BaseObject {
   readonly id: string;
   readonly type: string;
   readonly stateList?: StateList;
-  readonly callbacks?: ObjectCallbacks;
   canPass: boolean;
   state: ObjectState;
   x: number;
@@ -32,11 +37,13 @@ export interface BaseObject {
 /** Objects that can be interacted with */
 export interface IInteractable extends BaseObject {
   readonly relatedObjects: IInteractable[];
+  readonly callbacks: InteractableObjectCallbacks;
   interact(): void;
 }
 
 /** Objects that can be collected */
 export interface ICollectible extends BaseObject {
+  readonly callbacks?: CollectibleObjectCallbacks;
   collected: boolean;
 
   collect(character: Character): void;
@@ -52,22 +59,26 @@ export interface ObjectOptions {
   readonly x: number;
   readonly y: number;
   readonly stateList?: StateList;
-  readonly callbacks?: ObjectCallbacks;
   state?: ObjectState;
   canPass?: boolean;
 }
 
 /** Configuration for interactable objects */
 export interface InteractableObjectOptions extends ObjectOptions {
+  readonly callbacks: InteractableObjectCallbacks;
   readonly relatedObjects: IInteractable[];
 }
 
 /** Configuration for collectible objects */
 export interface CollectibleObjectOptions extends ObjectOptions {
+  readonly callbacks?: CollectibleObjectCallbacks;
   collected?: boolean;
 }
 
-/** Constructor type for creating BaseObject instances */
-export type ObjectConstructor<T extends ObjectOptions = ObjectOptions> = new (
-  options: T
-) => BaseObject;
+export function isInteractable(object: BaseObject): object is IInteractable {
+  return "interact" in object && typeof object.interact === "function";
+}
+
+export function isCollectible(object: BaseObject): object is ICollectible {
+  return "collect" in object && typeof object.collect === "function";
+}

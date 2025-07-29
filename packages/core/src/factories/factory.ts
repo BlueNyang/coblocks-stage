@@ -1,5 +1,11 @@
-import { BaseObject, ObjectConstructor, ObjectOptions } from "@/types/objects";
-import { ObjectCallbacks } from "@/types/callbacks";
+import {
+  StageObjects,
+  StageObjectOptions,
+  ObjectConstructor,
+  ObjectOptions,
+  isInteractable,
+  isCollectible,
+} from "@/types/objects";
 
 /**
  * Factory for creating objects based on their type
@@ -36,20 +42,27 @@ export class ObjectFactory {
   }
 
   /** Creates a new object of the specified type */
-  public static create(type: string, options: ObjectOptions): BaseObject {
+  public static create(type: string, options: StageObjectOptions): StageObjects {
     const constructor = this.objectRegistry.get(type);
     if (!constructor) {
       throw new Error(`Object type "${type}" is not registered.`);
     }
+
     try {
-      return new constructor({ ...options, type });
+      const obj = new constructor(options);
+
+      if (!isInteractable(obj) && !isCollectible(obj)) {
+        throw new Error(`Object type "${type}" must implement IInteractable or ICollectible.`);
+      }
+
+      return obj;
     } catch (error) {
       console.error(`Error creating object of type "${type}":`, error);
       throw new Error(`Failed to create object of type "${type}".`);
     }
   }
 
-  public static createFromJSON(jsonData: Record<string, any> | string): BaseObject {
+  public static createFromJSON(jsonData: Record<string, any> | string): StageObjects {
     try {
       const data = typeof jsonData === "string" ? JSON.parse(jsonData) : jsonData;
 
@@ -58,14 +71,12 @@ export class ObjectFactory {
         throw new Error("Invalid JSON data: 'type' is required and must be a string.");
       }
 
-      const { type, ...options } = data;
-
-      if (!type) {
+      if (!data.type) {
         console.error("Object type is required in JSON data.");
         throw new Error("Object type is required in JSON data.");
       }
 
-      return this.create(type, options);
+      return this.create(data.type, data);
     } catch (error) {
       console.error("Error creating object from JSON:", error);
       throw new Error("Failed to create object from JSON.");

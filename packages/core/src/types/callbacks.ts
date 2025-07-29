@@ -5,10 +5,10 @@ import { BaseObject, ObjectState } from "./objects";
 
 export type ImageProvider = (object: BaseObject) => any | null;
 export type IconProvider = (object: BaseObject) => any | null;
-export type PassabilityChecker = (character: Character) => boolean;
-export type InteractionHandler = (character: Character) => void;
+export type PassabilityChecker = (object: BaseObject, character: Character) => boolean;
+export type InteractionHandler = (object: BaseObject) => void;
 export type StateChangeHandler = (
-  state: BaseObject,
+  object: BaseObject,
   oldState: ObjectState,
   newState: ObjectState
 ) => void;
@@ -19,11 +19,17 @@ export type DropHandler = (object: BaseObject, character: Character, x: number, 
  * Callbacks for object behaviors
  */
 export interface ObjectCallbacks {
-  onGetImage: ImageProvider;
-  onGetIcon: IconProvider;
-  onIsPassable: PassabilityChecker;
-  onInteract: InteractionHandler;
-  onStateChange: StateChangeHandler;
-  onCollect: CollectionHandler;
-  onDrop: DropHandler;
+  onGetImage?: ImageProvider;
+  onGetIcon?: IconProvider;
+  onIsPassable?: PassabilityChecker;
+  onStateChange?: StateChangeHandler;
+}
+
+export interface InteractableObjectCallbacks extends ObjectCallbacks {
+  onInteract?: InteractionHandler;
+}
+
+export interface CollectibleObjectCallbacks extends ObjectCallbacks {
+  onCollect?: CollectionHandler;
+  onDrop?: DropHandler;
 }
