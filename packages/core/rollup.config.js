@@ -1,40 +1,60 @@
 import typescript from "@rollup/plugin-typescript";
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
-import { terser } from "@rollup/plugin-terser";
+import terser from "@rollup/plugin-terser";
 import dts from "rollup-plugin-dts";
+import alias from "@rollup/plugin-alias";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const production = !process.env.ROLLUP_WATCH;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 export default [
   {
+    cache: false,
     input: "src/index.ts",
     output: [
       {
-        file: "dist/index.esm.js",
+        file: "dist/index.mjs",
         format: "esm",
         sourcemap: true,
       },
       {
-        file: "dist/index.cjs.js",
+        file: "dist/index.cjs",
         format: "cjs",
         sourcemap: true,
       },
-      {
-        file: "dist/index.umd.js",
-        format: "umd",
-        name: "MyLibrary",
-        sourcemap: true,
-      },
     ],
-    plugins: [resolve(), commonjs(), typescript(), production && terser()],
+    plugins: [
+      resolve(),
+      commonjs(),
+      typescript({
+        tsconfig: "./tsconfig.json",
+        declaration: true,
+        declarationDir: "./dist",
+        outputToFilesystem: true,
+      }),
+      terser(),
+      alias({
+        entries: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
+      }),
+    ],
   },
   {
-    input: "dist/index.d.ts",
+    cache: false,
+    input: "src/index.ts",
     output: {
       file: "dist/index.d.ts",
       format: "esm",
     },
-    plugins: [dts()],
+    plugins: [
+      alias({
+        entries: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
+      }),
+      dts({
+        tsconfig: "./tsconfig.json",
+      }),
+    ],
   },
 ];
