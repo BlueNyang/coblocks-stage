@@ -36,3 +36,10 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+
+# Testing
+*.test.js
+*.test.ts
+__tests__
+tests
+test
