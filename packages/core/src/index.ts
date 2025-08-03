@@ -1,6 +1,6 @@
 import { CannotDropError, CannotCollectError, InvalidObjectStateError } from "./errors/objError";
 import { WorkerNotInitializedError } from "@/errors/workerError";
-import { ObjectFactory } from "./factories/factory";
+import { ObjectFactory, TileFactory } from "./factories/factory";
 import { InteractableObject, CollectibleObject } from "@/implements/basicObj";
 import {
   ImageProvider,
@@ -29,6 +29,8 @@ import {
   isInteractable,
   isCollectible,
 } from "./types/objects";
+import { BaseTile, TileOptions, TileConstructor } from "./types/tiles";
+import { PassableTile, UnpassableTile } from "./implements/basicTile";
 import { CodeExecutor } from "./worker/codeExecutor";
 import { WorkerSandbox } from "./worker/codeExecutor.worker";
 
@@ -38,6 +40,7 @@ export {
   InvalidObjectStateError,
   WorkerNotInitializedError,
   ObjectFactory,
+  TileFactory,
   InteractableObject,
   CollectibleObject,
   ImageProvider,
@@ -66,6 +69,11 @@ export {
   CollectibleObjectOptions,
   isInteractable,
   isCollectible,
+  BaseTile,
+  TileOptions,
+  PassableTile,
+  UnpassableTile,
+  TileConstructor,
   CodeExecutor,
   WorkerSandbox,
 };
