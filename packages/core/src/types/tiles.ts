@@ -4,8 +4,8 @@ import { Character } from "@/types/character";
 export type TileID = string;
 
 /** Constructor type for creating BaseTile instances */
-export type TileConstructor<T extends TileOptions = TileOptions> = new (
-  options: T
+export type TileConstructor = new (
+  options: TileOptions
 ) => BaseTile;
 
 /** Base interface for all game tiles */

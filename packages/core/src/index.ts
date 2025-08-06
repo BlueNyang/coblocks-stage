@@ -1,6 +1,6 @@
 import { CannotDropError, CannotCollectError, InvalidObjectStateError } from "./errors/objError";
 import { WorkerNotInitializedError } from "@/errors/workerError";
-import { ObjectFactory, TileFactory } from "./factories/factory";
+import { ObjectFactory, TileFactory, CharaterFactory } from "./factories/factory";
 import { InteractableObject, CollectibleObject } from "@/implements/basicObj";
 import {
   ImageProvider,
@@ -13,7 +13,13 @@ import {
   InteractableObjectCallbacks,
   CollectibleObjectCallbacks,
 } from "./types/callbacks";
-import { Character } from "./types/character";
+import {
+  Character,
+  CharacterOptions,
+  CharacterConstructor,
+  CharacterDirection,
+} from "./types/character";
+import { BasicCharacter } from "./implements/basicChar";
 import { RuntimeState, ExecutionResult, StateChange, WorkerMesage } from "./types/execution";
 import {
   ObjectState,
@@ -41,6 +47,7 @@ export {
   WorkerNotInitializedError,
   ObjectFactory,
   TileFactory,
+  CharaterFactory,
   InteractableObject,
   CollectibleObject,
   ImageProvider,
@@ -74,6 +81,10 @@ export {
   PassableTile,
   UnpassableTile,
   TileConstructor,
+  CharacterOptions,
+  CharacterConstructor,
+  CharacterDirection,
+  BasicCharacter,
   CodeExecutor,
   WorkerSandbox,
 };

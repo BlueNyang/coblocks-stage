@@ -1,3 +1,4 @@
+import { InteractableObject } from "@/implements/basicObj";
 import { ObjectID } from "@/types/objects";
 
 /**
@@ -14,12 +15,11 @@ export interface Character {
   removeFromInventory(itemId: ObjectID): void;
   setDirection(direction: CharacterDirection): void;
   moveTo(x: number, y: number): void;
-  interactWith(objectId: ObjectID): void;
+  interactWith(objectId: InteractableObject): void;
   getInventory(): ObjectID[];
   getPosition(): { x: number; y: number };
   getDirection(): CharacterDirection;
   toJSON(): object;
-  fromJSON(data: object): void;
 }
 
 /** Character movement directions */
@@ -29,3 +29,12 @@ export enum CharacterDirection {
   LEFT = "left",
   RIGHT = "right",
 }
+
+export interface CharacterOptions {
+  readonly id: number;
+  readonly name: string;
+  position?: { x: number; y: number };
+  direction?: CharacterDirection;
+}
+
+export type CharacterConstructor = new (options: CharacterOptions) => Character;
