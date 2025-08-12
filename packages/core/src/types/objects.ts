@@ -12,9 +12,7 @@ export type StageObjects = IInteractable | ICollectible;
 export type StageObjectOptions = InteractableObjectOptions | CollectibleObjectOptions;
 
 /** Constructor type for creating BaseObject instances */
-export type ObjectConstructor<T extends ObjectOptions = ObjectOptions> = new (
-  options: T
-) => BaseObject;
+export type ObjectConstructor<T extends ObjectOptions> = (id: string, options: T) => BaseObject;
 
 /** Base interface for all game objects */
 export interface BaseObject {
@@ -54,7 +52,6 @@ export interface ICollectible extends BaseObject {
 
 /** Configuration options for creating objects */
 export interface ObjectOptions {
-  readonly id: string;
   readonly type: string;
   readonly x: number;
   readonly y: number;

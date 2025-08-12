@@ -4,7 +4,6 @@ import {
   StageObjects,
   StageObjectOptions,
   ObjectConstructor,
-  ObjectOptions,
   isInteractable,
   isCollectible,
 } from "@/types/objects";
@@ -15,17 +14,19 @@ import { TileConstructor, BaseTile, TileOptions } from "@/types/tiles";
  */
 export class ObjectFactory {
   private static objectRegistry = new Map<string, ObjectConstructor<any>>();
+  private static idCounter: number = 0;
 
   /**
    * Registers a new object type with its constructor
    */
-  public static register<T extends ObjectOptions>(
+  public static register<T extends StageObjects>(
     type: string,
     constructor: ObjectConstructor<T>
   ): void {
     if (this.objectRegistry.has(type)) {
       throw new Error(`Object type "${type}" is already registered.`);
     }
+
     this.objectRegistry.set(type, constructor);
   }
 
@@ -51,8 +52,9 @@ export class ObjectFactory {
       throw new Error(`Object type "${type}" is not registered.`);
     }
 
+    const id: string = this.generateId();
     try {
-      const obj = new constructor(options);
+      const obj = constructor(id, options);
 
       if (!isInteractable(obj) && !isCollectible(obj)) {
         throw new Error(`Object type "${type}" must implement IInteractable or ICollectible.`);
@@ -85,15 +87,20 @@ export class ObjectFactory {
       throw new Error("Failed to create object from JSON.");
     }
   }
+
+  private static generateId(): string {
+    return `obj_${this.idCounter++}`;
+  }
 }
 
 export class TileFactory {
-  private static tileRegistry = new Map<string, TileConstructor>();
+  private static tileRegistry = new Map<string, TileConstructor<any>>();
+  private static idCounter: number = 0;
 
   /**
    * Registers a new tile type with its constructor
    */
-  public static register(type: string, constructor: TileConstructor): void {
+  public static register<T extends BaseTile>(type: string, constructor: TileConstructor<T>): void {
     if (this.tileRegistry.has(type)) {
       throw new Error(`Tile type "${type}" is already registered.`);
     }
@@ -122,8 +129,12 @@ export class TileFactory {
       throw new Error(`Tile type "${type}" is not registered.`);
     }
 
+    const id: string = this.generateId();
+
     try {
-      return new constructor(options);
+      const obj = constructor(id, options);
+
+      return obj;
     } catch (error) {
       console.error(`Error creating tile of type "${type}":`, error);
       throw new Error(`Failed to create tile of type "${type}".`);
@@ -150,12 +161,17 @@ export class TileFactory {
       throw new Error("Failed to create tile from JSON.");
     }
   }
+
+  private static generateId(): string {
+    return `tile_${this.idCounter++}`;
+  }
 }
 
 export class CharaterFactory {
   private static characterRegistry = new Map<number, CharacterConstructor>();
+  private static idCounter: number = 0;
 
-  public static register(constructor: CharacterConstructor): void {
+  public static register<T extends CharacterConstructor>(constructor: T): void {
     const id = constructor.prototype.id;
     if (this.characterRegistry.has(id)) {
       throw new Error(`Character with ID "${id}" is already registered.`);
@@ -180,9 +196,10 @@ export class CharaterFactory {
     if (!constructor) {
       throw new Error(`Character with ID "${options.id}" is not registered.`);
     }
+    const id: number = this.generateId();
 
     try {
-      return new constructor(options);
+      return constructor(id, options);
     } catch (error) {
       console.error(`Error creating character with ID "${options.id}":`, error);
       throw new Error(`Failed to create character with ID "${options.id}".`);
@@ -208,5 +225,9 @@ export class CharaterFactory {
       console.error("Error creating character from JSON:", error);
       throw new Error("Failed to create character from JSON.");
     }
+  }
+
+  private static generateId(): number {
+    return this.idCounter++;
   }
 }

@@ -8,8 +8,8 @@ export class BasicCharacter implements Character {
   position: { x: number; y: number };
   direction: CharacterDirection;
 
-  constructor(options: CharacterOptions) {
-    this.id = options.id;
+  constructor(id: number, options: CharacterOptions) {
+    this.id = id;
     this.name = options.name;
     this.inventory = [];
     this.position = options.position || { x: 0, y: 0 };

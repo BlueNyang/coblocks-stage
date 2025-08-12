@@ -9,8 +9,8 @@ export class PassableTile implements BaseTile {
   readonly color: any | null;
   readonly canPass: boolean = true;
 
-  constructor(options: TileOptions) {
-    this.id = options.id;
+  constructor(id: string, options: TileOptions) {
+    this.id = id;
     this.type = options.type;
     this.x = options.x;
     this.y = options.y;
@@ -50,8 +50,8 @@ export class UnpassableTile implements BaseTile {
   readonly color: any | null;
   readonly canPass: boolean = false;
 
-  constructor(options: TileOptions) {
-    this.id = options.id;
+  constructor(id: string, options: TileOptions) {
+    this.id = id;
     this.type = options.type;
     this.x = options.x;
     this.y = options.y;

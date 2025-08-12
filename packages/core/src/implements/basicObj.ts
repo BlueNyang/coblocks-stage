@@ -26,8 +26,8 @@ export class InteractableObject implements IInteractable {
   readonly stateList: StateList;
   readonly callbacks: InteractableObjectCallbacks;
 
-  constructor(options: InteractableObjectOptions) {
-    this.id = options.id;
+  constructor(id: string, options: InteractableObjectOptions) {
+    this.id = id;
     this.type = options.type;
     this.relatedObjects = options.relatedObjects;
     this.stateList = options.stateList || [];
@@ -119,8 +119,8 @@ export class CollectibleObject implements ICollectible {
   readonly stateList: StateList;
   readonly callbacks: CollectibleObjectCallbacks;
 
-  constructor(options: CollectibleObjectOptions) {
-    this.id = options.id;
+  constructor(id: string, options: CollectibleObjectOptions) {
+    this.id = id;
     this.type = options.type;
     this.stateList = options.stateList || [];
     this.callbacks = options.callbacks || ({} as CollectibleObjectCallbacks);

@@ -20,7 +20,7 @@ import {
   CharacterDirection,
 } from "./types/character";
 import { BasicCharacter } from "./implements/basicChar";
-import { RuntimeState, ExecutionResult, StateChange, WorkerMesage } from "./types/execution";
+import { RuntimeState, ExecutionResult, StateChange, WorkerMessage } from "./types/execution";
 import {
   ObjectState,
   StateList,
@@ -63,7 +63,7 @@ export {
   RuntimeState,
   ExecutionResult,
   StateChange,
-  WorkerMesage,
+  WorkerMessage,
   ObjectState,
   StateList,
   ObjectID,

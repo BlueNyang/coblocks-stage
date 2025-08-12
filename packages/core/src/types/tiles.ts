@@ -4,13 +4,10 @@ import { Character } from "@/types/character";
 export type TileID = string;
 
 /** Constructor type for creating BaseTile instances */
-export type TileConstructor = new (
-  options: TileOptions
-) => BaseTile;
+export type TileConstructor<T extends BaseTile> = (id: string, options: TileOptions) => T;
 
 /** Base interface for all game tiles */
 export interface BaseTile {
-  readonly id: string;
   readonly type: string;
   canPass: boolean;
   x: number;
@@ -24,7 +21,6 @@ export interface BaseTile {
 
 /** Configuration options for creating tiles */
 export interface TileOptions {
-  readonly id: string;
   readonly type: string;
   readonly x: number;
   readonly y: number;

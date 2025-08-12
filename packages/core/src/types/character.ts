@@ -37,4 +37,4 @@ export interface CharacterOptions {
   direction?: CharacterDirection;
 }
 
-export type CharacterConstructor = new (options: CharacterOptions) => Character;
+export type CharacterConstructor = (id: number, options: CharacterOptions) => Character;
