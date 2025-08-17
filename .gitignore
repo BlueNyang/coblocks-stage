@@ -43,3 +43,6 @@ yarn-error.log*
 __tests__
 tests
 test
+
+# VS Code
+.vscode/
