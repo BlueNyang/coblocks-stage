@@ -1,5 +1,10 @@
-import { InteractableObject, ObjectID } from "@/index";
-import { Character, CharacterDirection, CharacterOptions } from "@/types/character";
+import { InteractableObject } from "@/implements/basicObj";
+import { ObjectID } from "@/types/objects";
+import {
+  Character,
+  CharacterDirection,
+  CharacterOptions,
+} from "@/types/character";
 
 export class BasicCharacter implements Character {
   readonly id: number;
