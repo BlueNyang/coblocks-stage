@@ -1,5 +1,3 @@
-import { Character } from "@/types/character";
-
 /** Unique tile identifier */
 export type TileID = string;
 
@@ -8,6 +6,7 @@ export type TileConstructor<T extends BaseTile> = (id: string, options: TileOpti
 
 /** Base interface for all game tiles */
 export interface BaseTile {
+  readonly id: TileID;
   readonly type: string;
   canPass: boolean;
   x: number;

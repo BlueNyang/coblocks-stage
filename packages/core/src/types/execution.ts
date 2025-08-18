@@ -2,7 +2,7 @@ import { Character } from "@/types/character";
 import { StageObjects } from "@/types/objects";
 
 export interface RuntimeState {
-  character: Character;
+  character: Map<number, Character>;
   objects: Map<string, StageObjects>;
   map: {
     width: number;
@@ -23,16 +23,33 @@ export interface ExecutionResult {
   logs: string[];
   stateChanges: StateChange[];
   executionTime: number;
+  characterId?: number;
 }
 
 export interface StateChange {
-  type: "CHARACTER_MOVE" | "OBJECT_INTERACT" | "OBJECT_STATE_CHANGE" | "INVENTORY_CHANGE";
+  type:
+    | "CHARACTER_MOVE"
+    | "OBJECT_INTERACT"
+    | "OBJECT_STATE_CHANGE"
+    | "INVENTORY_CHANGE";
   timestamp: number;
   data: any;
+  characterId?: number;
 }
 
 export interface WorkerMessage {
-  type: "EXECUTE_CODE" | "SYNC_STATE" | "TRIGGER_EVENT" | "TERMINATE" | "PAUSE" | "RESUME";
+  type:
+    | "EXECUTE_CODE"
+    | "SYNC_STATE"
+    | "TRIGGER_EVENT"
+    | "TERMINATE"
+    | "PAUSE"
+    | "RESUME";
   payload: any;
   id?: string;
+}
+
+export interface ExecutionAllResult {
+  results: Map<number, ExecutionResult>;
+  allSuccessful: boolean;
 }

@@ -1,10 +1,17 @@
 import { WorkerNotInitializedError } from "@/errors/workerError";
-import { ExecutionResult, RuntimeState } from "@/types/execution";
+import {
+  ExecutionAllResult,
+  ExecutionResult,
+  RuntimeState,
+} from "@/types/execution";
 
 export class CodeExecutor {
   private worker: Worker | null = null;
   private messageId: number = 0;
-  private pendingMessages = new Map<string, { resolve: Function; reject: Function }>();
+  private pendingMessages = new Map<
+    string,
+    { resolve: Function; reject: Function }
+  >();
   private eventHandler = new Map<string, Function>();
 
   constructor() {
@@ -108,14 +115,44 @@ export class CodeExecutor {
       runtimeState: {
         ...runtimeState,
         objects: Object.fromEntries(runtimeState.objects),
+        map: {
+          ...runtimeState.map,
+          tiles: Object.fromEntries(runtimeState.map.tiles),
+        },
+        character: Object.fromEntries(runtimeState.character),
       },
     };
 
     await this.sendMessage("SYNC_STATE", serializedState);
   }
 
-  async executeCode(code: string): Promise<ExecutionResult> {
-    return this.sendMessage("EXECUTE_CODE", { code });
+  async executeCode(
+    code: string,
+    characterId: number = 1
+  ): Promise<ExecutionResult> {
+    return this.sendMessage("EXECUTE_CODE", { characterId, code });
+  }
+
+  async executeAllCharacters(
+    characterCodes: Map<number, string>
+  ): Promise<ExecutionAllResult> {
+    const payload = {
+      characterCode: Object.fromEntries(characterCodes),
+    };
+
+    const response = await this.sendMessage("EXECUTE_ALL_CHARACTERS", payload);
+
+    return {
+      results: new Map(
+        Object.entries(response.results).map(([key, value]) => [
+          Number(key),
+          value as ExecutionResult,
+        ])
+      ),
+      allSuccessful: Array.from(Object.values(response.results)).every(
+        (result: any) => result.success
+      ),
+    };
   }
 
   async pauseExecution(): Promise<void> {

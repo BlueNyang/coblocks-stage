@@ -2,7 +2,6 @@ import { RuntimeState, ExecutionResult, StateChange } from "@/types/execution";
 import { CharacterDirection } from "@/types/character";
 import { ObjectID } from "@/types/objects";
 import { CannotCollectError } from "@/errors/objError";
-import { get } from "http";
 
 export class WorkerSandbox {
   private runtimeState: RuntimeState | null = null;
@@ -11,19 +10,30 @@ export class WorkerSandbox {
   private startTime: number = 0;
   private isPaused: boolean = false;
   private executionId: string = "";
+  private currentCharacterId: number = -1;
 
   constructor() {}
 
   // API 생성
-  createAPI() {
-    const self = this;
+  createAPI(characterId: number) {
+    this.currentCharacterId = characterId;
 
     return {
       character: {
         move: (direction: string | CharacterDirection) => {
-          if (!self.runtimeState || !self.runtimeState.character) {
+          this.checkPaused();
+
+          if (!this.runtimeState || !this.runtimeState.character) {
             throw new Error("Runtime state or character not initialized");
           }
+
+          const character = this.runtimeState.character.get(characterId);
+          if (!character) {
+            throw new Error(
+              `Character with ID ${characterId} not found in runtime state.`
+            );
+          }
+
           let dir: CharacterDirection;
           const strDir = String(direction).toLowerCase();
 
@@ -44,7 +54,6 @@ export class WorkerSandbox {
               throw new Error(`Invalid direction: ${direction}`);
           }
 
-          const character = self.runtimeState.character;
           const oldPos = { ...character.getPosition() };
 
           // processing movement
@@ -71,16 +80,23 @@ export class WorkerSandbox {
           // check boundaries
           if (
             newPos.x < 0 ||
-            newPos.x >= self.runtimeState.map.width ||
+            newPos.x >= this.runtimeState!.map.width ||
             newPos.y < 0 ||
-            newPos.y >= self.runtimeState.map.height
+            newPos.y >= this.runtimeState!.map.height
           ) {
             throw new Error(`Character cannot move outside map boundaries.`);
           }
 
+          // check tile
+          const tileKey = `${newPos.x},${newPos.y}`;
+          const tile = this.runtimeState!.map.tiles.get(tileKey);
+          if (tile && !tile.canPass) {
+            throw new Error(`Character cannot move onto tile: ${tileKey}`);
+          }
+
           // check collisions
           const objectAtNewPos = Array.from(
-            self.runtimeState.objects.values()
+            this.runtimeState.objects.values()
           ).filter((obj) => obj.x === newPos.x && obj.y === newPos.y);
 
           for (const obj of objectAtNewPos) {
@@ -91,62 +107,85 @@ export class WorkerSandbox {
             }
           }
 
+          // check collisions for other character
+          const otherCharacters = Array.from(
+            this.runtimeState.character.values()
+          ).filter((char) => char.id !== characterId);
+
+          const characterAtPos = otherCharacters.find((char) => {
+            const pos = char.getPosition();
+            return pos.x === newPos.x && pos.y === newPos.y;
+          });
+
+          if (characterAtPos) {
+            throw new Error(
+              `Character cannot move onto another character: ${characterAtPos.id}`
+            );
+          }
+
           // Move character
           character.moveTo(newPos.x, newPos.y);
           character.setDirection(dir);
 
           // Log state change
-          self.stateChanges.push({
+          this.stateChanges.push({
             type: "CHARACTER_MOVE",
             timestamp: Date.now(),
             data: {
+              characterId,
               from: oldPos,
               to: { ...character.getPosition() },
               direction,
             },
           });
-          self.log.push(`Character moved ${direction}`);
+          this.log.push(`Character moved ${direction}`);
         },
 
-        getPosition: () => ({ ...self.runtimeState!.character.getPosition() }),
-        getDirection: () => self.runtimeState!.character.getDirection(),
+        getPosition: () => ({
+          ...this.runtimeState!.character.get(characterId)?.getPosition(),
+        }),
+        getDirection: () =>
+          this.runtimeState!.character.get(characterId)?.getDirection(),
         getInventory: () => {
-          if (!self.runtimeState?.character) return [];
-          return [...self.runtimeState.character.getInventory()];
+          if (!this.runtimeState?.character) return [];
+          return [
+            ...(this.runtimeState.character.get(characterId)?.getInventory() ||
+              []),
+          ];
         },
 
         interact: () => {
-          if (this.isPaused) {
-            throw new Error("Game is paused");
-          }
+          this.checkPaused();
 
-          if (!self.runtimeState?.character) {
+          const character = this.runtimeState!.character.get(characterId);
+          if (!character) {
             throw new Error("Character not initialized");
           }
 
-          const charPos = self.runtimeState!.character.getPosition();
+          const charPos = character.getPosition();
           const objectAtPosition = Array.from(
-            self.runtimeState!.objects.values()
+            this.runtimeState!.objects.values()
           ).filter((obj) => obj.x === charPos.x && obj.y === charPos.y);
 
           if (objectAtPosition.length === 0) {
+            this.log.push("No objects to interact with at current position.");
             throw new Error("No objects to interact with at current position.");
-            self.log.push("No objects to interact with at current position.");
           }
 
           objectAtPosition.forEach((obj) => {
             if ("interact" in obj && typeof obj.interact === "function") {
               obj.interact();
-              self.stateChanges.push({
+              this.stateChanges.push({
                 type: "OBJECT_INTERACT",
                 timestamp: Date.now(),
                 data: {
+                  characterId,
                   objectId: obj.id,
                   objectType: obj.type,
                   position: { x: obj.x, y: obj.y },
                 },
               });
-              self.log.push(
+              this.log.push(
                 `Interacted with object: ${obj.id} of type ${obj.type}`
               );
             }
@@ -156,27 +195,83 @@ export class WorkerSandbox {
 
       objects: {
         getById: (id: ObjectID) => {
-          const obj = self.runtimeState!.objects.get(id);
-          return obj ? self.createObjectProxy(obj) : null;
+          const obj = this.runtimeState!.objects.get(id);
+          return obj ? this.createObjectProxy(obj, characterId) : null;
         },
 
         getByType: (type: string) => {
-          return Array.from(self.runtimeState!.objects.values())
+          return Array.from(this.runtimeState!.objects.values())
             .filter((obj) => obj.type === type)
-            .map((obj) => self.createObjectProxy(obj));
+            .map((obj) => this.createObjectProxy(obj, characterId));
         },
 
         getAt: (x: number, y: number) => {
-          return Array.from(self.runtimeState!.objects.values())
+          return Array.from(this.runtimeState!.objects.values())
             .filter((obj) => obj.x === x && obj.y === y)
-            .map((obj) => self.createObjectProxy(obj));
+            .map((obj) => this.createObjectProxy(obj, characterId));
         },
       },
 
-      wait: async (ms: number) => {
-        return new Promise((resolve) => {
-          setTimeout(resolve, Math.min(ms, 1000));
-        });
+      map: {
+        getSize: () => {
+          if (!this.runtimeState?.map) return { width: 0, height: 0 };
+          return {
+            width: this.runtimeState.map.width,
+            height: this.runtimeState.map.height,
+          };
+        },
+
+        getTitleAt: (x: number, y: number) => {
+          if (!this.runtimeState?.map) return null;
+          const tileKey = `${x},${y}`;
+          const tile = this.runtimeState.map.tiles.get(tileKey);
+          return tile
+            ? {
+                id: tile.id,
+                type: tile.type,
+                x: tile.x,
+                y: tile.y,
+                canPass: tile.canPass,
+              }
+            : null;
+        },
+
+        isPassable: (x: number, y: number) => {
+          const tileKey = `${x},${y}`;
+          const tile = this.runtimeState?.map.tiles.get(tileKey);
+          return tile ? tile.canPass : false;
+        },
+      },
+
+      runtime: {
+        wait: async (ms: number) => {
+          this.checkPaused();
+          return new Promise((resolve) => {
+            setTimeout(resolve, Math.min(ms, 1000));
+          });
+        },
+
+        getOtherCharacters: () => {
+          if (!this.runtimeState?.character) return [];
+          return Array.from(this.runtimeState.character.values())
+            .filter((char) => char.id !== characterId)
+            .map((char) => ({
+              id: char.id,
+              position: char.getPosition(),
+              direction: char.getDirection(),
+            }));
+        },
+
+        getAllCharacters: () => {
+          if (!this.runtimeState?.character) return [];
+          return Array.from(this.runtimeState.character.values()).map(
+            (char) => ({
+              id: char.id,
+              position: char.getPosition(),
+              direction: char.getDirection(),
+            })
+          );
+        },
       },
 
       console: {
@@ -186,13 +281,35 @@ export class WorkerSandbox {
               typeof arg === "object" ? JSON.stringify(arg) : String(arg)
             )
             .join(" ");
-          self.log.push(msg);
+          this.log.push(msg);
+        },
+
+        warn: (...args: any[]) => {
+          const msg = args
+            .map((arg) =>
+              typeof arg === "object"
+                ? JSON.stringify(arg, null, 2)
+                : String(arg)
+            )
+            .join(" ");
+          this.log.push(msg);
+        },
+
+        error: (...args: any[]) => {
+          const msg = args
+            .map((arg) =>
+              typeof arg === "object"
+                ? JSON.stringify(arg, null, 2)
+                : String(arg)
+            )
+            .join(" ");
+          this.log.push(msg);
         },
       },
     };
   }
 
-  createObjectProxy(obj: any): any {
+  createObjectProxy(obj: any, characterId: number): any {
     return {
       id: obj.id,
       type: obj.type,
@@ -207,33 +324,76 @@ export class WorkerSandbox {
         ? (character: any) => obj.isPassable(character)
         : undefined,
 
-      interact: obj.interact
-        ? () => {
-            obj.interact();
-            this.stateChanges.push({
-              type: "OBJECT_INTERACT",
-              timestamp: Date.now(),
-              data: { objectId: obj.id, objectType: obj.type },
-            });
-          }
-        : undefined,
-
-      collect: obj.collect
-        ? (character: any) => {
-            if (obj.isCollected && obj.isCollected()) {
-              throw new CannotCollectError(
-                `Object ${obj.id} is already collected.`
-              );
+      interact:
+        "interact" in obj
+          ? () => {
+              this.checkPaused();
+              obj.interact();
+              this.stateChanges.push({
+                type: "OBJECT_INTERACT",
+                timestamp: Date.now(),
+                data: {
+                  characterId,
+                  objectId: obj.id,
+                  objectType: obj.type,
+                },
+              });
             }
+          : undefined,
 
-            obj.collect(character);
-            this.stateChanges.push({
-              type: "INVENTORY_CHANGE",
-              timestamp: Date.now(),
-              data: { objectId: obj.id, objectType: obj.type },
-            });
-          }
-        : undefined,
+      collect:
+        "collect" in obj
+          ? () => {
+              this.checkPaused();
+              const character = this.runtimeState!.character.get(characterId);
+              if (!character) {
+                throw new Error("Character not found");
+              }
+
+              if (obj.isCollected && obj.isCollected()) {
+                throw new CannotCollectError(
+                  `Object ${obj.id} is already collected.`
+                );
+              }
+
+              obj.collect(character);
+              this.stateChanges.push({
+                type: "INVENTORY_CHANGE",
+                timestamp: Date.now(),
+                data: {
+                  characterId,
+                  objectId: obj.id,
+                  objectType: obj.type,
+                },
+              });
+            }
+          : undefined,
+
+      drop:
+        "drop" in obj && "isCollected" in obj
+          ? (x: number, y: number) => {
+              this.checkPaused();
+              const character = this.runtimeState?.character.get(characterId);
+
+              if (!character) throw new Error("Character not found");
+
+              if (!obj.isCollected()) {
+                throw new Error(`Object ${obj.id} is not collected.`);
+              }
+
+              obj.drop(character, x, y);
+              this.stateChanges.push({
+                type: "INVENTORY_CHANGE",
+                timestamp: Date.now(),
+                data: {
+                  characterId,
+                  objectId: obj.id,
+                  objectType: obj.type,
+                  position: { x, y },
+                },
+              });
+            }
+          : undefined,
 
       isCollected: obj.isCollected ? () => obj.isCollected() : undefined,
 
@@ -243,14 +403,14 @@ export class WorkerSandbox {
     };
   }
 
-  async execute(code: string): Promise<ExecutionResult> {
+  async execute(characterId: number, code: string): Promise<ExecutionResult> {
     this.log = [];
     this.stateChanges = [];
     this.startTime = Date.now();
     this.isPaused = false;
 
     try {
-      const api = this.createAPI();
+      const api = this.createAPI(characterId);
       const result = await new Promise((resolve, reject) => {
         try {
           const wrappedCode = `
@@ -285,6 +445,7 @@ export class WorkerSandbox {
         logs: this.log,
         stateChanges: this.stateChanges,
         executionTime: Date.now() - this.startTime,
+        characterId,
       };
     } catch (error: any) {
       return {
@@ -301,15 +462,50 @@ export class WorkerSandbox {
         logs: this.log,
         stateChanges: this.stateChanges,
         executionTime: Date.now() - this.startTime,
+        characterId,
       };
     }
+  }
+
+  async executeAll(
+    characterCodes: Map<number, string>
+  ): Promise<Map<number, ExecutionResult>> {
+    this.log = [];
+    this.stateChanges = [];
+    this.startTime = Date.now();
+    this.executionId = `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    this.isPaused = false;
+
+    const results = new Map<number, ExecutionResult>();
+
+    const promises = Array.from(characterCodes.entries()).map(
+      async ([characterId, code]) => {
+        const result = await this.execute(characterId, code);
+        return { characterId, result };
+      }
+    );
+
+    const resolvedResults = await Promise.all(promises);
+
+    resolvedResults.forEach(({ characterId, result }) => {
+      results.set(characterId, result);
+    });
+
+    return results;
   }
 
   syncState(state: RuntimeState): void {
     this.runtimeState = {
       ...state,
       objects: new Map(Object.entries(state.objects)),
+      map: {
+        ...state.map,
+        tiles: new Map(Object.entries(state.map.tiles)),
+      },
+      character: new Map(state.character),
     };
+
+    this.log = [];
   }
 
   pause(): void {
@@ -318,6 +514,12 @@ export class WorkerSandbox {
 
   resume(): void {
     this.isPaused = false;
+  }
+
+  private checkPaused(): void {
+    if (this.isPaused) {
+      throw new Error("Execution is paused");
+    }
   }
 }
 
@@ -339,7 +541,7 @@ self.onmessage = async function (event) {
         break;
 
       case "EXECUTE_CODE":
-        resp = await sandbox.execute(payload.code);
+        resp = await sandbox.execute(payload.characterId, payload.code);
         break;
 
       case "PAUSE":
