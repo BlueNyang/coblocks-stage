@@ -174,7 +174,7 @@ export class WorkerSandbox {
 
           objectAtPosition.forEach((obj) => {
             if ("interact" in obj && typeof obj.interact === "function") {
-              obj.interact();
+              obj.interact(character);
               this.stateChanges.push({
                 type: "OBJECT_INTERACT",
                 timestamp: Date.now(),

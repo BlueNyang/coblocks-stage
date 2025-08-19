@@ -5,15 +5,29 @@ import { BaseObject, ObjectState } from "./objects";
 
 export type ImageProvider = (object: BaseObject) => any | null;
 export type IconProvider = (object: BaseObject) => any | null;
-export type PassabilityChecker = (object: BaseObject, character: Character) => boolean;
-export type InteractionHandler = (object: BaseObject) => void;
+export type PassabilityChecker = (
+  object: BaseObject,
+  character: Character
+) => boolean;
+export type InteractionHandler = (
+  object: BaseObject,
+  character: Character
+) => void;
 export type StateChangeHandler = (
   object: BaseObject,
   oldState: ObjectState,
   newState: ObjectState
 ) => void;
-export type CollectionHandler = (object: BaseObject, character: Character) => void;
-export type DropHandler = (object: BaseObject, character: Character, x: number, y: number) => void;
+export type CollectionHandler = (
+  object: BaseObject,
+  character: Character
+) => void;
+export type DropHandler = (
+  object: BaseObject,
+  character: Character,
+  x: number,
+  y: number
+) => void;
 
 /**
  * Callbacks for object behaviors

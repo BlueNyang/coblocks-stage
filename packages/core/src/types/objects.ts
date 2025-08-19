@@ -1,5 +1,8 @@
 import { Character } from "@/types/character";
-import { InteractableObjectCallbacks, CollectibleObjectCallbacks } from "@/types/callbacks";
+import {
+  InteractableObjectCallbacks,
+  CollectibleObjectCallbacks,
+} from "@/types/callbacks";
 
 /** Object state identifier */
 export type ObjectState = string;
@@ -9,10 +12,15 @@ export type StateList = ObjectState[];
 export type ObjectID = string;
 
 export type StageObjects = IInteractable | ICollectible;
-export type StageObjectOptions = InteractableObjectOptions | CollectibleObjectOptions;
+export type StageObjectOptions =
+  | InteractableObjectOptions
+  | CollectibleObjectOptions;
 
 /** Constructor type for creating BaseObject instances */
-export type ObjectConstructor<T extends ObjectOptions> = (id: string, options: T) => BaseObject;
+export type ObjectConstructor<T extends ObjectOptions> = (
+  id: string,
+  options: T
+) => BaseObject;
 
 /** Base interface for all game objects */
 export interface BaseObject {
@@ -36,7 +44,7 @@ export interface BaseObject {
 export interface IInteractable extends BaseObject {
   readonly relatedObjects: IInteractable[];
   readonly callbacks: InteractableObjectCallbacks;
-  interact(): void;
+  interact(character: Character): void;
 }
 
 /** Objects that can be collected */

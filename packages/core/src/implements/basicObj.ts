@@ -6,9 +6,16 @@ import type {
   ObjectState,
   StateList,
 } from "@/types/objects";
-import { InvalidObjectStateError, CannotCollectError, CannotDropError } from "@/errors/objError";
+import {
+  InvalidObjectStateError,
+  CannotCollectError,
+  CannotDropError,
+} from "@/errors/objError";
 import { Character } from "@/types/character";
-import { InteractableObjectCallbacks, CollectibleObjectCallbacks } from "@/types/callbacks";
+import {
+  InteractableObjectCallbacks,
+  CollectibleObjectCallbacks,
+} from "@/types/callbacks";
 
 /**
  * Object that can be interacted with by characters
@@ -48,11 +55,15 @@ export class InteractableObject implements IInteractable {
       if (this.callbacks.onStateChange) {
         this.callbacks.onStateChange(this, oldState, newState);
       } else {
-        console.warn(`State change callback not defined for object type: ${this.type}`);
+        console.warn(
+          `State change callback not defined for object type: ${this.type}`
+        );
       }
     } else {
       console.warn(`Invalid state: ${newState} for object type: ${this.type}`);
-      throw new InvalidObjectStateError(`Invalid state: ${newState} for object type: ${this.type}`);
+      throw new InvalidObjectStateError(
+        `Invalid state: ${newState} for object type: ${this.type}`
+      );
     }
   }
 
@@ -81,15 +92,15 @@ export class InteractableObject implements IInteractable {
     return this.canPass;
   }
 
-  interact(): void {
+  interact(character: Character): void {
     this.relatedObjects.forEach((obj) => {
       if (typeof obj.interact === "function") {
-        obj.interact();
+        obj.interact(character);
       }
     });
 
     if (this.callbacks.onInteract) {
-      this.callbacks.onInteract(this);
+      this.callbacks.onInteract(this, character);
     }
   }
 
@@ -139,11 +150,15 @@ export class CollectibleObject implements ICollectible {
       if (this.callbacks.onStateChange) {
         this.callbacks.onStateChange(this, oldState, state);
       } else {
-        console.warn(`State change callback not defined for object type: ${this.type}`);
+        console.warn(
+          `State change callback not defined for object type: ${this.type}`
+        );
       }
     } else {
       console.warn(`Invalid state: ${state} for object type: ${this.type}`);
-      throw new InvalidObjectStateError(`Invalid state: ${state} for object type: ${this.type}`);
+      throw new InvalidObjectStateError(
+        `Invalid state: ${state} for object type: ${this.type}`
+      );
     }
   }
 
@@ -186,7 +201,9 @@ export class CollectibleObject implements ICollectible {
   drop(character: Character, x: number, y: number): void {
     if (!this.isCollected()) {
       console.warn(`${this.type} is not collected and cannot be dropped.`);
-      throw new CannotDropError(`${this.type} is not collected and cannot be dropped.`);
+      throw new CannotDropError(
+        `${this.type} is not collected and cannot be dropped.`
+      );
     }
 
     this.setCollected(false);

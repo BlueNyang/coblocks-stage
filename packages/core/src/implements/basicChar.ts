@@ -38,7 +38,7 @@ export class BasicCharacter implements Character {
   }
 
   interactWith(object: InteractableObject): void {
-    object.interact();
+    object.interact(this);
   }
 
   getInventory(): ObjectID[] {
