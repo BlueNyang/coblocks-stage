@@ -10,9 +10,7 @@ import {
 
 interface UseCodeExecutionResult {
   executeCode: (code: string, characterId?: number) => Promise<ExecutionResult>;
-  executeAllCharacters: (
-    characterCodes: Map<number, string>
-  ) => Promise<ExecutionAllResult>;
+  executeAllCharacters: (characterCodes: Map<number, string>) => Promise<ExecutionAllResult>;
   syncState: (state: RuntimeState) => Promise<void>;
   pause: () => Promise<void>;
   resume: () => Promise<void>;
@@ -73,9 +71,7 @@ export const useCodeExecutor = (): UseCodeExecutionResult => {
   );
 
   const executeAllCharacters = useCallback(
-    async (
-      characterCodes: Map<number, string>
-    ): Promise<ExecutionAllResult> => {
+    async (characterCodes: Map<number, string>): Promise<ExecutionAllResult> => {
       if (!codeExecutor) {
         throw new Error("CodeExecutor is not initialized.");
       }

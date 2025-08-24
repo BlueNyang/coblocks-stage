@@ -87,6 +87,18 @@ const CoblocksStage = forwardRef<StageRef, StageProps>(
       [config.size]
     );
 
+    const cloneRuntimeState = (state: RuntimeState): RuntimeState => {
+      return {
+        character: new Map(state.character),
+        objects: new Map(state.objects),
+        map: {
+          width: state.map.width,
+          height: state.map.height,
+          tiles: new Map(state.map.tiles),
+        },
+      };
+    };
+
     // Initialize stage when data is loaded and executor is ready
     useEffect(() => {
       if (isReady && internalData && !stageState.isInitialized) {
@@ -97,7 +109,7 @@ const CoblocksStage = forwardRef<StageRef, StageProps>(
             isRunning: false,
             isPaused: false,
             currentState: runtimeState,
-            initialState: structuredClone(runtimeState),
+            initialState: cloneRuntimeState(runtimeState),
           };
 
           setStageState(newState);
@@ -344,7 +356,6 @@ const CoblocksStage = forwardRef<StageRef, StageProps>(
         .filter((obj) => !("isCollected" in obj) || !obj.isCollected())
         .map((obj) => {
           const image = obj.getImage();
-          const icon = obj.getIcon();
 
           return (
             <g key={obj.id}>
@@ -356,13 +367,13 @@ const CoblocksStage = forwardRef<StageRef, StageProps>(
                 fill={obj.canPass ? "rgba(0,255,0,0.3)" : "rgba(255,0,0,0.3)"}
                 rx={2}
               />
-              {(image || icon) && (
+              {image && (
                 <image
                   x={obj.x * tileSize + 4}
                   y={obj.y * tileSize + 4}
                   width={tileSize - 8}
                   height={tileSize - 8}
-                  href={image || icon}
+                  href={image}
                 />
               )}
               <text

@@ -1,19 +1,4 @@
 import CoblocksStage from "./components/Stage";
-import {
-  StageSize,
-  StageConfig,
-  StageData,
-  StageState,
-  StageProps,
-  StageRef,
-} from "./types/stage";
+import { StageSize, StageConfig, StageData, StageState, StageProps, StageRef } from "./types/stage";
 
-export {
-  CoblocksStage,
-  StageSize,
-  StageConfig,
-  StageData,
-  StageState,
-  StageProps,
-  StageRef,
-};
+export { CoblocksStage, StageSize, StageConfig, StageData, StageState, StageProps, StageRef };
