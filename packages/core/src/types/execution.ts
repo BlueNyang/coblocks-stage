@@ -40,6 +40,7 @@ export interface StateChange {
 export interface WorkerMessage {
   type:
     | "EXECUTE_CODE"
+    | "EXECUTE_ALL_CHARACTERS"
     | "SYNC_STATE"
     | "TRIGGER_EVENT"
     | "TERMINATE"

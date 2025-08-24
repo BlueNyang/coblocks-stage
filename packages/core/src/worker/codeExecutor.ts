@@ -1,8 +1,8 @@
 import { WorkerNotInitializedError } from "@/errors/workerError";
 import {
-  ExecutionAllResult,
-  ExecutionResult,
   RuntimeState,
+  ExecutionResult,
+  ExecutionAllResult,
 } from "@/types/execution";
 
 export class CodeExecutor {
@@ -19,16 +19,12 @@ export class CodeExecutor {
   }
 
   private initializeWorker(): void {
-    // Separate worker initialization for development and production
-    if (process.env.NODE_ENV === "development") {
-      // Use a direct path that doesn't rely on import.meta
-      this.worker = new Worker("/src/worker/codeExecutor.worker.ts", {
+    this.worker = new Worker(
+      "/node_modules/@coblocks-stage/core/dist/codeExecutor.worker.js",
+      {
         type: "module",
-      });
-    } else {
-      // Production
-      this.worker = new Worker("/workers/codeExecutor.worker.js");
-    }
+      }
+    );
 
     this.setupWorkerHandlers();
   }
@@ -48,14 +44,23 @@ export class CodeExecutor {
       }
       // 실시간 이벤트 처리
       switch (type) {
-        case "LOG":
-          this.handleLog(payload);
+        case "SYNC_STATE":
+          this.syncState(payload);
           break;
-        case "STATE_CHANGE":
-          this.handleStateChange(payload);
+        case "EXECUTE_CODE":
+          this.executeCode(payload);
           break;
-        case "ERROR":
-          this.handleWorkerError(payload);
+        case "EXECUTE_ALL_CHARACTERS":
+          this.executeAllCharacters(payload);
+          break;
+        case "PAUSE":
+          this.pauseExecution();
+          break;
+        case "RESUME":
+          this.resumeExecution();
+          break;
+        case "TERMINATE":
+          this.terminate();
           break;
       }
     };
@@ -73,21 +78,6 @@ export class CodeExecutor {
   private emit(event: string, data: any): void {
     const handler = this.eventHandler.get(event);
     if (handler) handler(data);
-  }
-
-  private handleLog(payload: any): void {
-    console.log("[Worker] Log: ", payload.message);
-    this.emit("LOG", payload);
-  }
-
-  private handleStateChange(payload: any): void {
-    console.log("[Worker] State Change: ", payload);
-    this.emit("STATE_CHANGE", payload);
-  }
-
-  private handleWorkerError(payload: any): void {
-    console.error("[Worker] Error: ", payload);
-    this.emit("ERROR", payload);
   }
 
   private async sendMessage(type: string, payload?: any): Promise<any> {
@@ -137,10 +127,12 @@ export class CodeExecutor {
     characterCodes: Map<number, string>
   ): Promise<ExecutionAllResult> {
     const payload = {
-      characterCode: Object.fromEntries(characterCodes),
+      characterCodes: Object.fromEntries(characterCodes),
     };
 
     const response = await this.sendMessage("EXECUTE_ALL_CHARACTERS", payload);
+
+    console.log("[Worker] Response is ", response);
 
     return {
       results: new Map(

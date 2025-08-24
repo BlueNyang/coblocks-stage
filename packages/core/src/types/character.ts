@@ -1,3 +1,4 @@
+import { BasicCharacter } from "@/implements/basicChar";
 import { InteractableObject } from "@/implements/basicObj";
 import { ObjectID } from "@/types/objects";
 
@@ -33,8 +34,12 @@ export enum CharacterDirection {
 export interface CharacterOptions {
   readonly id: number;
   readonly name: string;
+  inventory?: ObjectID[];
   position?: { x: number; y: number };
   direction?: CharacterDirection;
 }
 
-export type CharacterConstructor = (id: number, options: CharacterOptions) => Character;
+export type CharacterConstructor = (
+  id: number,
+  options: CharacterOptions
+) => Character;

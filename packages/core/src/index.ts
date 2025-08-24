@@ -1,24 +1,11 @@
-import {
-  CannotDropError,
-  CannotCollectError,
-  InvalidObjectStateError,
-} from "./errors/objError";
+import { CannotDropError, CannotCollectError, InvalidObjectStateError } from "./errors/objError";
 import { WorkerNotInitializedError } from "@/errors/workerError";
 import { ObjectFactory } from "./factories/factory";
 import { BasicCharacter } from "./implements/basicChar";
 import { InteractableObject, CollectibleObject } from "./implements/basicObj";
 import { PassableTile, UnpassableTile } from "./implements/basicTile";
-import {
-  Character,
-  CharacterDirection,
-  CharacterOptions,
-} from "./types/character";
-import {
-  ExecutionResult,
-  ExecutionAllResult,
-  StateChange,
-  RuntimeState,
-} from "./types/execution";
+import { Character, CharacterDirection, CharacterOptions } from "./types/character";
+import { ExecutionResult, ExecutionAllResult, StateChange, RuntimeState } from "./types/execution";
 import {
   ObjectState,
   StateList,

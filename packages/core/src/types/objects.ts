@@ -1,8 +1,4 @@
 import { Character } from "@/types/character";
-import {
-  InteractableObjectCallbacks,
-  CollectibleObjectCallbacks,
-} from "@/types/callbacks";
 
 /** Object state identifier */
 export type ObjectState = string;
@@ -27,6 +23,7 @@ export interface BaseObject {
   readonly id: string;
   readonly type: string;
   readonly stateList?: StateList;
+  readonly images?: Map<string, string>; // Map of state to image URL
   canPass: boolean;
   state: ObjectState;
   x: number;
@@ -34,8 +31,7 @@ export interface BaseObject {
 
   setState(state: ObjectState): void;
   isValidState(state: ObjectState): boolean;
-  getImage(): any | null;
-  getIcon(): any | null;
+  getImage(): string | null;
   isPassable(character: Character): boolean;
   toJSON(): object;
 }
@@ -43,13 +39,11 @@ export interface BaseObject {
 /** Objects that can be interacted with */
 export interface IInteractable extends BaseObject {
   readonly relatedObjects: IInteractable[];
-  readonly callbacks: InteractableObjectCallbacks;
   interact(character: Character): void;
 }
 
 /** Objects that can be collected */
 export interface ICollectible extends BaseObject {
-  readonly callbacks?: CollectibleObjectCallbacks;
   collected: boolean;
 
   collect(character: Character): void;
@@ -66,17 +60,16 @@ export interface ObjectOptions {
   readonly stateList?: StateList;
   state?: ObjectState;
   canPass?: boolean;
+  images?: Map<string, string>; // Map of state to image URL
 }
 
 /** Configuration for interactable objects */
 export interface InteractableObjectOptions extends ObjectOptions {
-  readonly callbacks: InteractableObjectCallbacks;
   readonly relatedObjects: IInteractable[];
 }
 
 /** Configuration for collectible objects */
 export interface CollectibleObjectOptions extends ObjectOptions {
-  readonly callbacks?: CollectibleObjectCallbacks;
   collected?: boolean;
 }
 

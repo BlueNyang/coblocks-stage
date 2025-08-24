@@ -21,6 +21,16 @@ export class BasicCharacter implements Character {
     this.direction = options.direction || CharacterDirection.UP;
   }
 
+  static fromObject(object: any): BasicCharacter {
+    return new BasicCharacter(object.id, {
+      id: object.id,
+      name: object.name,
+      inventory: object.inventory,
+      position: object.position,
+      direction: object.direction,
+    });
+  }
+
   addToInventory(itemId: ObjectID): void {
     this.inventory.push(itemId);
   }

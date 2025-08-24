@@ -2,29 +2,30 @@ import { RuntimeState, ExecutionResult, StateChange } from "@/types/execution";
 import { CharacterDirection } from "@/types/character";
 import { ObjectID } from "@/types/objects";
 import { CannotCollectError } from "@/errors/objError";
+import { BasicCharacter } from "@/implements/basicChar";
 
-export class WorkerSandbox {
+class WorkerSandbox {
   private runtimeState: RuntimeState | null = null;
   private log: string[] = [];
   private stateChanges: StateChange[] = [];
   private startTime: number = 0;
   private isPaused: boolean = false;
-  private executionId: string = "";
-  private currentCharacterId: number = -1;
 
   constructor() {}
 
   // API 생성
   createAPI(characterId: number) {
-    this.currentCharacterId = characterId;
-
     return {
       character: {
         move: (direction: string | CharacterDirection) => {
           this.checkPaused();
 
-          if (!this.runtimeState || !this.runtimeState.character) {
-            throw new Error("Runtime state or character not initialized");
+          if (!this.runtimeState) {
+            throw new Error("Runtime state not initialized");
+          }
+
+          if (!this.runtimeState.character) {
+            throw new Error("Character not initialized");
           }
 
           const character = this.runtimeState.character.get(characterId);
@@ -206,6 +207,10 @@ export class WorkerSandbox {
         },
 
         getAt: (x: number, y: number) => {
+          console.log(
+            `[Worker] Current objects at position: ${x}, ${y}: `,
+            Array.from(this.runtimeState!.objects.values())
+          );
           return Array.from(this.runtimeState!.objects.values())
             .filter((obj) => obj.x === x && obj.y === y)
             .map((obj) => this.createObjectProxy(obj, characterId));
@@ -313,13 +318,11 @@ export class WorkerSandbox {
     return {
       id: obj.id,
       type: obj.type,
+      images: obj.images || undefined,
+      canPass: obj.canPass,
+      state: obj.state,
       x: obj.x,
       y: obj.y,
-      state: obj.state,
-      canPass: obj.canPass,
-
-      getImage: obj.getImage ? () => obj.getImage() : undefined,
-      getIcon: obj.getIcon ? () => obj.getIcon() : undefined,
       isPassable: obj.isPassable
         ? (character: any) => obj.isPassable(character)
         : undefined,
@@ -439,9 +442,11 @@ export class WorkerSandbox {
         }
       });
 
+      console.log("[Worker] Execution completed. Result: ", result);
+
       return {
         success: true,
-        result,
+        result: result,
         logs: this.log,
         stateChanges: this.stateChanges,
         executionTime: Date.now() - this.startTime,
@@ -473,7 +478,6 @@ export class WorkerSandbox {
     this.log = [];
     this.stateChanges = [];
     this.startTime = Date.now();
-    this.executionId = `exec_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     this.isPaused = false;
 
     const results = new Map<number, ExecutionResult>();
@@ -490,20 +494,13 @@ export class WorkerSandbox {
     resolvedResults.forEach(({ characterId, result }) => {
       results.set(characterId, result);
     });
+    console.log("[Worker] Execution results: ", results);
 
     return results;
   }
 
   syncState(state: RuntimeState): void {
-    this.runtimeState = {
-      ...state,
-      objects: new Map(Object.entries(state.objects)),
-      map: {
-        ...state.map,
-        tiles: new Map(Object.entries(state.map.tiles)),
-      },
-      character: new Map(state.character),
-    };
+    this.runtimeState = state;
 
     this.log = [];
   }
@@ -527,21 +524,47 @@ const sandbox = new WorkerSandbox();
 
 self.onmessage = async function (event) {
   const { type, payload, id } = event.data;
+
   try {
     let resp;
 
     switch (type) {
       case "SYNC_STATE":
-        const restoredState = {
-          ...payload.runtimeState,
+        const restoredState: RuntimeState = {
+          character: new Map(
+            Object.entries(payload.runtimeState.character).map(
+              ([key, value]) => {
+                return [Number(key), BasicCharacter.fromObject(value)];
+              }
+            )
+          ),
           objects: new Map(Object.entries(payload.runtimeState.objects)),
+          map: {
+            width: payload.runtimeState.map.width,
+            height: payload.runtimeState.map.height,
+            tiles: new Map(Object.entries(payload.runtimeState.map.tiles)),
+          },
         };
+
         sandbox.syncState(restoredState);
         resp = { success: true };
         break;
 
       case "EXECUTE_CODE":
-        resp = await sandbox.execute(payload.characterId, payload.code);
+        resp = await sandbox.execute(
+          Number(payload.characterId),
+          String(payload.code)
+        );
+        break;
+
+      case "EXECUTE_ALL_CHARACTERS":
+        const codes = new Map(
+          Object.entries(payload.characterCodes).map(([key, value]) => [
+            Number(key),
+            String(value),
+          ])
+        );
+        resp = await sandbox.executeAll(codes);
         break;
 
       case "PAUSE":

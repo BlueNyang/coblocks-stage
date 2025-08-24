@@ -12,10 +12,6 @@ import {
   CannotDropError,
 } from "@/errors/objError";
 import { Character } from "@/types/character";
-import {
-  InteractableObjectCallbacks,
-  CollectibleObjectCallbacks,
-} from "@/types/callbacks";
 
 /**
  * Object that can be interacted with by characters
@@ -31,14 +27,14 @@ export class InteractableObject implements IInteractable {
   readonly type: string;
   readonly relatedObjects: IInteractable[] = [];
   readonly stateList: StateList;
-  readonly callbacks: InteractableObjectCallbacks;
+  readonly images?: Map<string, string>;
 
   constructor(id: string, options: InteractableObjectOptions) {
     this.id = id;
     this.type = options.type;
     this.relatedObjects = options.relatedObjects;
     this.stateList = options.stateList || [];
-    this.callbacks = options.callbacks || ({} as InteractableObjectCallbacks);
+    this.images = options.images;
 
     this.x = options.x;
     this.y = options.y;
@@ -49,16 +45,7 @@ export class InteractableObject implements IInteractable {
 
   setState(newState: ObjectState): void {
     if (this.isValidState(newState)) {
-      const oldState = this.state;
       this.state = newState;
-
-      if (this.callbacks.onStateChange) {
-        this.callbacks.onStateChange(this, oldState, newState);
-      } else {
-        console.warn(
-          `State change callback not defined for object type: ${this.type}`
-        );
-      }
     } else {
       console.warn(`Invalid state: ${newState} for object type: ${this.type}`);
       throw new InvalidObjectStateError(
@@ -71,24 +58,11 @@ export class InteractableObject implements IInteractable {
     return this.stateList.includes(state);
   }
 
-  getImage(): any | null {
-    if (this.callbacks.onGetImage) {
-      return this.callbacks.onGetImage(this);
-    }
-    return null;
-  }
-
-  getIcon(): any | null {
-    if (this.callbacks.onGetIcon) {
-      return this.callbacks.onGetIcon(this);
-    }
-    return null;
+  getImage(): string | null {
+    return this.images?.get(this.state) || null;
   }
 
   isPassable(_character: Character): boolean {
-    if (this.callbacks.onIsPassable) {
-      return this.callbacks.onIsPassable(this, _character);
-    }
     return this.canPass;
   }
 
@@ -98,10 +72,6 @@ export class InteractableObject implements IInteractable {
         obj.interact(character);
       }
     });
-
-    if (this.callbacks.onInteract) {
-      this.callbacks.onInteract(this, character);
-    }
   }
 
   toJSON(): object {
@@ -128,13 +98,13 @@ export class CollectibleObject implements ICollectible {
   readonly id: string;
   readonly type: string;
   readonly stateList: StateList;
-  readonly callbacks: CollectibleObjectCallbacks;
+  readonly images?: Map<string, string>;
 
   constructor(id: string, options: CollectibleObjectOptions) {
     this.id = id;
     this.type = options.type;
     this.stateList = options.stateList || [];
-    this.callbacks = options.callbacks || ({} as CollectibleObjectCallbacks);
+    this.images = options.images;
 
     this.x = options.x;
     this.y = options.y;
@@ -147,13 +117,6 @@ export class CollectibleObject implements ICollectible {
     if (this.isValidState(state)) {
       const oldState = this.state;
       this.state = state;
-      if (this.callbacks.onStateChange) {
-        this.callbacks.onStateChange(this, oldState, state);
-      } else {
-        console.warn(
-          `State change callback not defined for object type: ${this.type}`
-        );
-      }
     } else {
       console.warn(`Invalid state: ${state} for object type: ${this.type}`);
       throw new InvalidObjectStateError(
@@ -166,25 +129,13 @@ export class CollectibleObject implements ICollectible {
     return this.stateList.includes(state);
   }
 
-  getImage(): any | null {
-    if (this.callbacks.onGetImage) {
-      return this.callbacks.onGetImage(this);
-    }
-    return null;
+  getImage(): string | null {
+    return this.images?.get(this.state) || null;
   }
 
-  getIcon(): any | null {
-    if (this.callbacks.onGetIcon) {
-      return this.callbacks.onGetIcon(this);
-    }
-    return null;
-  }
-
-  isPassable(character: Character): boolean {
+  // 원래 캐릭터 별로 passable 여부를 결정하려 했는데 빡세서 안함
+  isPassable(_: Character): boolean {
     // This method can be customized based on character properties
-    if (this.callbacks.onIsPassable) {
-      return this.callbacks.onIsPassable(this, character);
-    }
     return this.canPass;
   }
 
@@ -211,10 +162,6 @@ export class CollectibleObject implements ICollectible {
     character.removeFromInventory(this.id);
     this.x = x;
     this.y = y;
-
-    if (this.callbacks.onDrop) {
-      this.callbacks.onDrop(this, character, x, y);
-    }
   }
 
   isCollected(): boolean {
