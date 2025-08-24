@@ -40,6 +40,26 @@ export default [
         entries: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
       }),
     ],
+  },{
+    cache: false,
+    input: "src/worker/codeExecutor.worker.ts",
+    output: {
+      file: "dist/codeExecutor.worker.js",
+      format: "esm",
+      sourcemap: true,
+    },
+    plugins: [
+      resolve(),
+      commonjs(),
+      typescript({
+        tsconfig: "./tsconfig.json",
+        declaration: false,
+      }),
+      terser(),
+      alias({
+        entries: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
+      }),
+    ],
   },
   {
     cache: false,
