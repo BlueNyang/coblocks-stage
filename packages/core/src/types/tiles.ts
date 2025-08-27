@@ -1,3 +1,5 @@
+import { Position } from "./commonType";
+
 /** Unique tile identifier */
 export type TileID = string;
 
@@ -9,11 +11,11 @@ export interface BaseTile {
   readonly id: TileID;
   readonly type: string;
   canPass: boolean;
-  x: number;
-  y: number;
+  position: Position;
 
   getImage(): any | null;
   getColor(): any | null;
+  isPosition(x: number, y: number): boolean;
   isPassable(): boolean;
   toJSON(): object;
 }
@@ -21,8 +23,6 @@ export interface BaseTile {
 /** Configuration options for creating tiles */
 export interface TileOptions {
   readonly type: string;
-  readonly x: number;
-  readonly y: number;
   readonly image: any | null;
-  readonly color?: any | null;
+  readonly color: any | null;
 }

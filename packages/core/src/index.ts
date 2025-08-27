@@ -1,23 +1,20 @@
 import { CannotDropError, CannotCollectError, InvalidObjectStateError } from "./errors/objError";
 import { WorkerNotInitializedError } from "@/errors/workerError";
-import { ObjectFactory } from "./factories/factory";
+import { ObjectFactory, TileFactory, CharacterFactory } from "./factories/factory";
 import { BasicCharacter } from "./implements/basicChar";
 import { InteractableObject, CollectibleObject } from "./implements/basicObj";
 import { PassableTile, UnpassableTile } from "./implements/basicTile";
+import { Position } from "./types/commonType";
 import { Character, CharacterDirection, CharacterOptions } from "./types/character";
 import { ExecutionResult, ExecutionAllResult, StateChange, RuntimeState } from "./types/execution";
 import {
   ObjectState,
   StateList,
-  ObjectID,
-  StageObjects,
-  StageObjectOptions,
+  StageObject,
   BaseObject,
   IInteractable,
   ICollectible,
   ObjectOptions,
-  InteractableObjectOptions,
-  CollectibleObjectOptions,
   isInteractable,
   isCollectible,
 } from "./types/objects";
@@ -32,6 +29,8 @@ export {
   WorkerNotInitializedError,
   // Factory
   ObjectFactory,
+  TileFactory,
+  CharacterFactory,
   // Implements Classes
   BasicCharacter,
   InteractableObject,
@@ -39,6 +38,7 @@ export {
   PassableTile,
   UnpassableTile,
   // Types
+  Position,
   //  - Character
   Character,
   CharacterDirection,
@@ -51,15 +51,11 @@ export {
   //  - Objects
   ObjectState,
   StateList,
-  ObjectID,
-  StageObjects,
-  StageObjectOptions,
+  StageObject,
   BaseObject,
   IInteractable,
   ICollectible,
   ObjectOptions,
-  InteractableObjectOptions,
-  CollectibleObjectOptions,
   isInteractable,
   isCollectible,
   //  - Tiles

@@ -1,22 +1,12 @@
 import { Character } from "@/types/character";
+import { Position } from "./commonType";
 
 /** Object state identifier */
 export type ObjectState = string;
 /** List of available object states */
 export type StateList = ObjectState[];
-/** Unique object identifier */
-export type ObjectID = string;
 
-export type StageObjects = IInteractable | ICollectible;
-export type StageObjectOptions =
-  | InteractableObjectOptions
-  | CollectibleObjectOptions;
-
-/** Constructor type for creating BaseObject instances */
-export type ObjectConstructor<T extends ObjectOptions> = (
-  id: string,
-  options: T
-) => BaseObject;
+export type StageObject = IInteractable | ICollectible;
 
 /** Base interface for all game objects */
 export interface BaseObject {
@@ -26,13 +16,12 @@ export interface BaseObject {
   readonly images?: Map<string, string>; // Map of state to image URL
   canPass: boolean;
   state: ObjectState;
-  x: number;
-  y: number;
+  position: Position;
 
   setState(state: ObjectState): void;
   isValidState(state: ObjectState): boolean;
+  isPosition(x: number, y: number): boolean;
   getImage(): string | null;
-  isPassable(character: Character): boolean;
   toJSON(): object;
 }
 
@@ -55,22 +44,10 @@ export interface ICollectible extends BaseObject {
 /** Configuration options for creating objects */
 export interface ObjectOptions {
   readonly type: string;
-  readonly x: number;
-  readonly y: number;
   readonly stateList?: StateList;
   state?: ObjectState;
   canPass?: boolean;
   images?: Map<string, string>; // Map of state to image URL
-}
-
-/** Configuration for interactable objects */
-export interface InteractableObjectOptions extends ObjectOptions {
-  readonly relatedObjects: IInteractable[];
-}
-
-/** Configuration for collectible objects */
-export interface CollectibleObjectOptions extends ObjectOptions {
-  collected?: boolean;
 }
 
 export function isInteractable(object: BaseObject): object is IInteractable {

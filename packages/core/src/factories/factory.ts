@@ -1,28 +1,40 @@
 import { BasicCharacter } from "@/implements/basicChar";
-import { CharacterConstructor, CharacterOptions } from "@/types/character";
+import { CharacterDirection, CharacterOptions } from "@/types/character";
+import { Position } from "@/types/commonType";
 import {
-  StageObjects,
-  StageObjectOptions,
-  ObjectConstructor,
   isInteractable,
   isCollectible,
+  ObjectOptions,
+  IInteractable,
+  ICollectible,
+  StageObject,
 } from "@/types/objects";
-import { TileConstructor, BaseTile, TileOptions } from "@/types/tiles";
+import { BaseTile, TileOptions } from "@/types/tiles";
 
 /**
  * Factory for creating objects based on their type
  */
 export class ObjectFactory {
-  private static objectRegistry = new Map<string, ObjectConstructor<any>>();
-  private static idCounter: number = 0;
+  private objectRegistry = new Map<string, any>();
+  private idCounter: number;
+  private static instance: ObjectFactory;
+
+  private constructor() {
+    this.objectRegistry = new Map<string, any>();
+    this.idCounter = 0;
+  }
+
+  public static getInstance(): ObjectFactory {
+    if (!ObjectFactory.instance) {
+      ObjectFactory.instance = new ObjectFactory();
+    }
+    return ObjectFactory.instance;
+  }
 
   /**
    * Registers a new object type with its constructor
    */
-  public static register<T extends StageObjects>(
-    type: string,
-    constructor: ObjectConstructor<T>
-  ): void {
+  public register(type: string, constructor: any): void {
     if (this.objectRegistry.has(type)) {
       throw new Error(`Object type "${type}" is already registered.`);
     }
@@ -31,30 +43,31 @@ export class ObjectFactory {
   }
 
   /** Returns an array of all registered object types */
-  public static getRegisteredTypes(): string[] {
+  public getRegisteredTypes(): string[] {
     return Array.from(this.objectRegistry.keys());
   }
 
   /** Checks if an object type is registered */
-  public static isRegistered(type: string): boolean {
+  public isRegistered(type: string): boolean {
     return this.objectRegistry.has(type);
   }
 
   /** Unregisters an object type */
-  public static unregister(type: string): boolean {
+  public unregister(type: string): boolean {
     return this.objectRegistry.delete(type);
   }
 
   /** Creates a new object of the specified type */
-  public static create(type: string, options: StageObjectOptions): StageObjects {
+  public create(type: string, position: Position): IInteractable | ICollectible {
     const constructor = this.objectRegistry.get(type);
+
     if (!constructor) {
       throw new Error(`Object type "${type}" is not registered.`);
     }
 
     const id: string = this.generateId();
     try {
-      const obj = constructor(id, options);
+      const obj = constructor(id, position);
 
       if (!isInteractable(obj) && !isCollectible(obj)) {
         throw new Error(`Object type "${type}" must implement IInteractable or ICollectible.`);
@@ -67,40 +80,51 @@ export class ObjectFactory {
     }
   }
 
-  public static createFromJSON(jsonData: Record<string, any> | string): StageObjects {
+  public createFromJSON(data: { type: string; position: Position }[]): StageObject[] {
     try {
-      const data = typeof jsonData === "string" ? JSON.parse(jsonData) : jsonData;
+      const objects: StageObject[] = [];
+      data.forEach((obj) => {
+        if (typeof obj.type !== "string") {
+          console.error("Invalid JSON data: 'type' is required and must be a string.");
+          throw new Error("Invalid JSON data: 'type' is required and must be a string.");
+        }
 
-      if (typeof data.type !== "string") {
-        console.error("Invalid JSON data: 'type' is required and must be a string.");
-        throw new Error("Invalid JSON data: 'type' is required and must be a string.");
-      }
+        objects.push(this.create(obj.type, obj.position));
+      });
 
-      if (!data.type) {
-        console.error("Object type is required in JSON data.");
-        throw new Error("Object type is required in JSON data.");
-      }
-
-      return this.create(data.type, data);
+      return objects;
     } catch (error) {
       console.error("Error creating object from JSON:", error);
       throw new Error("Failed to create object from JSON.");
     }
   }
 
-  private static generateId(): string {
+  private generateId(): string {
     return `obj_${this.idCounter++}`;
   }
 }
 
 export class TileFactory {
-  private static tileRegistry = new Map<string, TileConstructor<any>>();
-  private static idCounter: number = 0;
+  private tileRegistry = new Map<string, any>();
+  private idCounter: number;
+  private static instance: TileFactory;
+
+  private constructor() {
+    this.tileRegistry = new Map<string, any>();
+    this.idCounter = 0;
+  }
+
+  public static getInstance(): TileFactory {
+    if (!TileFactory.instance) {
+      TileFactory.instance = new TileFactory();
+    }
+    return TileFactory.instance;
+  }
 
   /**
    * Registers a new tile type with its constructor
    */
-  public static register<T extends BaseTile>(type: string, constructor: TileConstructor<T>): void {
+  public register(type: string, constructor: any): void {
     if (this.tileRegistry.has(type)) {
       throw new Error(`Tile type "${type}" is already registered.`);
     }
@@ -108,22 +132,22 @@ export class TileFactory {
   }
 
   /** Returns an array of all registered tile types */
-  public static getRegisteredTypes(): string[] {
+  public getRegisteredTypes(): string[] {
     return Array.from(this.tileRegistry.keys());
   }
 
   /** Checks if a tile type is registered */
-  public static isRegistered(type: string): boolean {
+  public isRegistered(type: string): boolean {
     return this.tileRegistry.has(type);
   }
 
   /** Unregisters a tile type */
-  public static unregister(type: string): boolean {
+  public unregister(type: string): boolean {
     return this.tileRegistry.delete(type);
   }
 
   /** Creates a new tile of the specified type */
-  public static create(type: string, options: TileOptions): BaseTile {
+  public create(type: string, position: Position): BaseTile {
     const constructor = this.tileRegistry.get(type);
     if (!constructor) {
       throw new Error(`Tile type "${type}" is not registered.`);
@@ -132,7 +156,7 @@ export class TileFactory {
     const id: string = this.generateId();
 
     try {
-      const obj = constructor(id, options);
+      const obj = constructor(id, position);
 
       return obj;
     } catch (error) {
@@ -141,93 +165,107 @@ export class TileFactory {
     }
   }
 
-  public static createFromJSON(jsonData: Record<string, any> | string): BaseTile {
+  public createFromJSON(data: { type: string; position: Position }[]): BaseTile[] {
     try {
-      const data = typeof jsonData === "string" ? JSON.parse(jsonData) : jsonData;
+      return data.map((item) => {
+        if (typeof item.type !== "string") {
+          console.error("Invalid JSON data: 'type' is required and must be a string.");
+          throw new Error("Invalid JSON data: 'type' is required and must be a string.");
+        }
 
-      if (typeof data.type !== "string") {
-        console.error("Invalid JSON data: 'type' is required and must be a string.");
-        throw new Error("Invalid JSON data: 'type' is required and must be a string.");
-      }
+        if (!item.type) {
+          console.error("Tile type is required in JSON data.");
+          throw new Error("Tile type is required in JSON data.");
+        }
 
-      if (!data.type) {
-        console.error("Tile type is required in JSON data.");
-        throw new Error("Tile type is required in JSON data.");
-      }
-
-      return this.create(data.type, data);
+        return this.create(item.type, item.position);
+      });
     } catch (error) {
       console.error("Error creating tile from JSON:", error);
       throw new Error("Failed to create tile from JSON.");
     }
   }
 
-  private static generateId(): string {
+  private generateId(): string {
     return `tile_${this.idCounter++}`;
   }
 }
 
-export class CharaterFactory {
-  private static characterRegistry = new Map<number, CharacterConstructor>();
-  private static idCounter: number = 0;
+export class CharacterFactory {
+  private characterRegistry;
+  private idCounter: number;
+  private static instance: CharacterFactory;
 
-  public static register<T extends CharacterConstructor>(constructor: T): void {
-    const id = constructor.prototype.id;
-    if (this.characterRegistry.has(id)) {
-      throw new Error(`Character with ID "${id}" is already registered.`);
-    }
-    this.characterRegistry.set(id, constructor);
+  private constructor() {
+    this.idCounter = 0;
+    this.characterRegistry = new Map<string, any>();
   }
 
-  public static getRegisteredIds(): number[] {
+  public static getInstance(): CharacterFactory {
+    if (!CharacterFactory.instance) {
+      CharacterFactory.instance = new CharacterFactory();
+    }
+    return CharacterFactory.instance;
+  }
+
+  public register(type: string, constructor: any): void {
+    if (this.characterRegistry.has(type)) {
+      throw new Error(`Character with type "${type}" is already registered.`);
+    }
+    this.characterRegistry.set(type, constructor);
+  }
+
+  public getRegisteredIds(): string[] {
     return Array.from(this.characterRegistry.keys());
   }
 
-  public static isRegistered(id: number): boolean {
-    return this.characterRegistry.has(id);
+  public isRegistered(type: string): boolean {
+    return this.characterRegistry.has(type);
   }
 
-  public static unregister(id: number): boolean {
-    return this.characterRegistry.delete(id);
+  public unregister(type: string): boolean {
+    return this.characterRegistry.delete(type);
   }
 
-  public static create(options: CharacterOptions): BasicCharacter {
-    const constructor = this.characterRegistry.get(options.id);
+  public create(type: string, position: Position, direction: CharacterDirection): BasicCharacter {
+    const constructor = this.characterRegistry.get(type);
     if (!constructor) {
-      throw new Error(`Character with ID "${options.id}" is not registered.`);
+      throw new Error(`Character with type "${type}" is not registered.`);
     }
     const id: number = this.generateId();
 
     try {
-      return constructor(id, options);
+      return constructor(id, position, direction);
     } catch (error) {
-      console.error(`Error creating character with ID "${options.id}":`, error);
-      throw new Error(`Failed to create character with ID "${options.id}".`);
+      console.error(`Error creating character with ID "${id}":`, error);
+      throw new Error(`Failed to create character with ID "${id}".`);
     }
   }
 
-  public static createFromJSON(jsonData: Record<string, any> | string): BasicCharacter {
+  public createFromJSON(
+    data: { type: string; position: Position; direction: CharacterDirection }[]
+  ): BasicCharacter[] {
     try {
-      const data = typeof jsonData === "string" ? JSON.parse(jsonData) : jsonData;
+      return data.map((item) => {
+        if (typeof item.type !== "string") {
+          console.error("Invalid JSON data: 'type' is required and must be a string.");
+          throw new Error("Invalid JSON data: 'type' is required and must be a string.");
+        }
 
-      if (typeof data.id !== "number") {
-        console.error("Invalid JSON data: 'id' is required and must be a number.");
-        throw new Error("Invalid JSON data: 'id' is required and must be a number.");
-      }
+        if (!item.type) {
+          console.error("Character type is required in JSON data.");
+          throw new Error("Character type is required in JSON data.");
+        }
 
-      if (!data.id) {
-        console.error("Character ID is required in JSON data.");
-        throw new Error("Character ID is required in JSON data.");
-      }
-
-      return this.create(data);
+        return this.create(item.type, item.position, item.direction);
+      });
     } catch (error) {
       console.error("Error creating character from JSON:", error);
       throw new Error("Failed to create character from JSON.");
     }
   }
 
-  private static generateId(): number {
+  private generateId(): number {
     return this.idCounter++;
   }
 }

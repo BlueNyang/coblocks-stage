@@ -1,9 +1,9 @@
 import { Character } from "@/types/character";
-import { StageObjects } from "@/types/objects";
+import { StageObject } from "@/types/objects";
 
 export interface RuntimeState {
   character: Map<number, Character>;
-  objects: Map<string, StageObjects>;
+  objects: Map<string, StageObject>;
   map: {
     width: number;
     height: number;
@@ -27,11 +27,7 @@ export interface ExecutionResult {
 }
 
 export interface StateChange {
-  type:
-    | "CHARACTER_MOVE"
-    | "OBJECT_INTERACT"
-    | "OBJECT_STATE_CHANGE"
-    | "INVENTORY_CHANGE";
+  type: "CHARACTER_MOVE" | "OBJECT_INTERACT" | "OBJECT_STATE_CHANGE" | "INVENTORY_CHANGE";
   timestamp: number;
   data: any;
   characterId?: number;

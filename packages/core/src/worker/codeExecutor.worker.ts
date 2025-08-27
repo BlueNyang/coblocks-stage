@@ -1,6 +1,5 @@
 import { RuntimeState, ExecutionResult, StateChange } from "@/types/execution";
 import { CharacterDirection } from "@/types/character";
-import { ObjectID } from "@/types/objects";
 import { CannotCollectError } from "@/errors/objError";
 import { BasicCharacter } from "@/implements/basicChar";
 
@@ -30,9 +29,7 @@ class WorkerSandbox {
 
           const character = this.runtimeState.character.get(characterId);
           if (!character) {
-            throw new Error(
-              `Character with ID ${characterId} not found in runtime state.`
-            );
+            throw new Error(`Character with ID ${characterId} not found in runtime state.`);
           }
 
           let dir: CharacterDirection;
@@ -96,22 +93,20 @@ class WorkerSandbox {
           }
 
           // check collisions
-          const objectAtNewPos = Array.from(
-            this.runtimeState.objects.values()
-          ).filter((obj) => obj.x === newPos.x && obj.y === newPos.y);
+          const objectAtNewPos = Array.from(this.runtimeState.objects.values()).filter((obj) =>
+            obj.isPosition(newPos.x, newPos.y)
+          );
 
           for (const obj of objectAtNewPos) {
             if (!obj.canPass) {
-              throw new Error(
-                `Character cannot move through object: ${obj.id}`
-              );
+              throw new Error(`Character cannot move through object: ${obj.id}`);
             }
           }
 
           // check collisions for other character
-          const otherCharacters = Array.from(
-            this.runtimeState.character.values()
-          ).filter((char) => char.id !== characterId);
+          const otherCharacters = Array.from(this.runtimeState.character.values()).filter(
+            (char) => char.id !== characterId
+          );
 
           const characterAtPos = otherCharacters.find((char) => {
             const pos = char.getPosition();
@@ -119,9 +114,7 @@ class WorkerSandbox {
           });
 
           if (characterAtPos) {
-            throw new Error(
-              `Character cannot move onto another character: ${characterAtPos.id}`
-            );
+            throw new Error(`Character cannot move onto another character: ${characterAtPos.id}`);
           }
 
           // Move character
@@ -145,14 +138,10 @@ class WorkerSandbox {
         getPosition: () => ({
           ...this.runtimeState!.character.get(characterId)?.getPosition(),
         }),
-        getDirection: () =>
-          this.runtimeState!.character.get(characterId)?.getDirection(),
+        getDirection: () => this.runtimeState!.character.get(characterId)?.getDirection(),
         getInventory: () => {
           if (!this.runtimeState?.character) return [];
-          return [
-            ...(this.runtimeState.character.get(characterId)?.getInventory() ||
-              []),
-          ];
+          return [...(this.runtimeState.character.get(characterId)?.getInventory() || [])];
         },
 
         interact: () => {
@@ -164,9 +153,9 @@ class WorkerSandbox {
           }
 
           const charPos = character.getPosition();
-          const objectAtPosition = Array.from(
-            this.runtimeState!.objects.values()
-          ).filter((obj) => obj.x === charPos.x && obj.y === charPos.y);
+          const objectAtPosition = Array.from(this.runtimeState!.objects.values()).filter((obj) =>
+            obj.isPosition(charPos.x, charPos.y)
+          );
 
           if (objectAtPosition.length === 0) {
             this.log.push("No objects to interact with at current position.");
@@ -183,19 +172,17 @@ class WorkerSandbox {
                   characterId,
                   objectId: obj.id,
                   objectType: obj.type,
-                  position: { x: obj.x, y: obj.y },
+                  position: obj.position,
                 },
               });
-              this.log.push(
-                `Interacted with object: ${obj.id} of type ${obj.type}`
-              );
+              this.log.push(`Interacted with object: ${obj.id} of type ${obj.type}`);
             }
           });
         },
       },
 
       objects: {
-        getById: (id: ObjectID) => {
+        getById: (id: string) => {
           const obj = this.runtimeState!.objects.get(id);
           return obj ? this.createObjectProxy(obj, characterId) : null;
         },
@@ -212,7 +199,7 @@ class WorkerSandbox {
             Array.from(this.runtimeState!.objects.values())
           );
           return Array.from(this.runtimeState!.objects.values())
-            .filter((obj) => obj.x === x && obj.y === y)
+            .filter((obj) => obj.isPosition(x, y))
             .map((obj) => this.createObjectProxy(obj, characterId));
         },
       },
@@ -269,44 +256,32 @@ class WorkerSandbox {
 
         getAllCharacters: () => {
           if (!this.runtimeState?.character) return [];
-          return Array.from(this.runtimeState.character.values()).map(
-            (char) => ({
-              id: char.id,
-              position: char.getPosition(),
-              direction: char.getDirection(),
-            })
-          );
+          return Array.from(this.runtimeState.character.values()).map((char) => ({
+            id: char.id,
+            position: char.getPosition(),
+            direction: char.getDirection(),
+          }));
         },
       },
 
       console: {
         log: (...args: any[]) => {
           const msg = args
-            .map((arg) =>
-              typeof arg === "object" ? JSON.stringify(arg) : String(arg)
-            )
+            .map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : String(arg)))
             .join(" ");
           this.log.push(msg);
         },
 
         warn: (...args: any[]) => {
           const msg = args
-            .map((arg) =>
-              typeof arg === "object"
-                ? JSON.stringify(arg, null, 2)
-                : String(arg)
-            )
+            .map((arg) => (typeof arg === "object" ? JSON.stringify(arg, null, 2) : String(arg)))
             .join(" ");
           this.log.push(msg);
         },
 
         error: (...args: any[]) => {
           const msg = args
-            .map((arg) =>
-              typeof arg === "object"
-                ? JSON.stringify(arg, null, 2)
-                : String(arg)
-            )
+            .map((arg) => (typeof arg === "object" ? JSON.stringify(arg, null, 2) : String(arg)))
             .join(" ");
           this.log.push(msg);
         },
@@ -323,9 +298,7 @@ class WorkerSandbox {
       state: obj.state,
       x: obj.x,
       y: obj.y,
-      isPassable: obj.isPassable
-        ? (character: any) => obj.isPassable(character)
-        : undefined,
+      isPassable: obj.isPassable ? (character: any) => obj.isPassable(character) : undefined,
 
       interact:
         "interact" in obj
@@ -354,9 +327,7 @@ class WorkerSandbox {
               }
 
               if (obj.isCollected && obj.isCollected()) {
-                throw new CannotCollectError(
-                  `Object ${obj.id} is already collected.`
-                );
+                throw new CannotCollectError(`Object ${obj.id} is already collected.`);
               }
 
               obj.collect(character);
@@ -472,9 +443,7 @@ class WorkerSandbox {
     }
   }
 
-  async executeAll(
-    characterCodes: Map<number, string>
-  ): Promise<Map<number, ExecutionResult>> {
+  async executeAll(characterCodes: Map<number, string>): Promise<Map<number, ExecutionResult>> {
     this.log = [];
     this.stateChanges = [];
     this.startTime = Date.now();
@@ -482,12 +451,10 @@ class WorkerSandbox {
 
     const results = new Map<number, ExecutionResult>();
 
-    const promises = Array.from(characterCodes.entries()).map(
-      async ([characterId, code]) => {
-        const result = await this.execute(characterId, code);
-        return { characterId, result };
-      }
-    );
+    const promises = Array.from(characterCodes.entries()).map(async ([characterId, code]) => {
+      const result = await this.execute(characterId, code);
+      return { characterId, result };
+    });
 
     const resolvedResults = await Promise.all(promises);
 
@@ -532,11 +499,9 @@ self.onmessage = async function (event) {
       case "SYNC_STATE":
         const restoredState: RuntimeState = {
           character: new Map(
-            Object.entries(payload.runtimeState.character).map(
-              ([key, value]) => {
-                return [Number(key), BasicCharacter.fromObject(value)];
-              }
-            )
+            Object.entries(payload.runtimeState.character).map(([key, value]) => {
+              return [Number(key), BasicCharacter.fromObject(value)];
+            })
           ),
           objects: new Map(Object.entries(payload.runtimeState.objects)),
           map: {
@@ -551,18 +516,12 @@ self.onmessage = async function (event) {
         break;
 
       case "EXECUTE_CODE":
-        resp = await sandbox.execute(
-          Number(payload.characterId),
-          String(payload.code)
-        );
+        resp = await sandbox.execute(Number(payload.characterId), String(payload.code));
         break;
 
       case "EXECUTE_ALL_CHARACTERS":
         const codes = new Map(
-          Object.entries(payload.characterCodes).map(([key, value]) => [
-            Number(key),
-            String(value),
-          ])
+          Object.entries(payload.characterCodes).map(([key, value]) => [Number(key), String(value)])
         );
         resp = await sandbox.executeAll(codes);
         break;

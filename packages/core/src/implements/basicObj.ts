@@ -1,25 +1,19 @@
 import type {
   ICollectible,
   IInteractable,
-  InteractableObjectOptions,
-  CollectibleObjectOptions,
+  ObjectOptions,
   ObjectState,
   StateList,
 } from "@/types/objects";
-import {
-  InvalidObjectStateError,
-  CannotCollectError,
-  CannotDropError,
-} from "@/errors/objError";
+import { InvalidObjectStateError, CannotCollectError, CannotDropError } from "@/errors/objError";
 import { Character } from "@/types/character";
+import { Position } from "@/types/commonType";
 
 /**
  * Object that can be interacted with by characters
  */
 export class InteractableObject implements IInteractable {
-  x: number;
-  y: number;
-
+  position: Position;
   state: ObjectState = "default"; // Default state
   canPass: boolean = true;
 
@@ -29,18 +23,21 @@ export class InteractableObject implements IInteractable {
   readonly stateList: StateList;
   readonly images?: Map<string, string>;
 
-  constructor(id: string, options: InteractableObjectOptions) {
+  constructor(
+    id: string,
+    options: ObjectOptions,
+    position: Position,
+    relatedObjects: IInteractable[]
+  ) {
     this.id = id;
     this.type = options.type;
-    this.relatedObjects = options.relatedObjects;
     this.stateList = options.stateList || [];
     this.images = options.images;
-
-    this.x = options.x;
-    this.y = options.y;
-
     this.state = options.state || "default";
     this.canPass = options.canPass || true;
+
+    this.position = position;
+    this.relatedObjects = relatedObjects;
   }
 
   setState(newState: ObjectState): void {
@@ -48,9 +45,7 @@ export class InteractableObject implements IInteractable {
       this.state = newState;
     } else {
       console.warn(`Invalid state: ${newState} for object type: ${this.type}`);
-      throw new InvalidObjectStateError(
-        `Invalid state: ${newState} for object type: ${this.type}`
-      );
+      throw new InvalidObjectStateError(`Invalid state: ${newState} for object type: ${this.type}`);
     }
   }
 
@@ -58,12 +53,12 @@ export class InteractableObject implements IInteractable {
     return this.stateList.includes(state);
   }
 
-  getImage(): string | null {
-    return this.images?.get(this.state) || null;
+  isPosition(x: number, y: number): boolean {
+    return this.position.x === x && this.position.y === y;
   }
 
-  isPassable(_character: Character): boolean {
-    return this.canPass;
+  getImage(): string | null {
+    return this.images?.get(this.state) || null;
   }
 
   interact(character: Character): void {
@@ -78,9 +73,9 @@ export class InteractableObject implements IInteractable {
     return {
       id: this.id,
       type: this.type,
-      x: this.x,
-      y: this.y,
+      position: this.position,
       state: this.state,
+      relatedObjects: this.relatedObjects.map((obj) => obj.id),
     };
   }
 }
@@ -89,8 +84,7 @@ export class InteractableObject implements IInteractable {
  * Object that can be collected by characters
  */
 export class CollectibleObject implements ICollectible {
-  x: number;
-  y: number;
+  position: Position;
   canPass: boolean;
   state: string;
   collected: boolean;
@@ -100,17 +94,16 @@ export class CollectibleObject implements ICollectible {
   readonly stateList: StateList;
   readonly images?: Map<string, string>;
 
-  constructor(id: string, options: CollectibleObjectOptions) {
+  constructor(id: string, options: ObjectOptions, position: Position, collected: boolean) {
     this.id = id;
     this.type = options.type;
     this.stateList = options.stateList || [];
     this.images = options.images;
-
-    this.x = options.x;
-    this.y = options.y;
     this.canPass = options.canPass || true;
     this.state = options.state || "default";
-    this.collected = options.collected || false;
+
+    this.position = position;
+    this.collected = collected;
   }
 
   setState(state: ObjectState): void {
@@ -119,9 +112,7 @@ export class CollectibleObject implements ICollectible {
       this.state = state;
     } else {
       console.warn(`Invalid state: ${state} for object type: ${this.type}`);
-      throw new InvalidObjectStateError(
-        `Invalid state: ${state} for object type: ${this.type}`
-      );
+      throw new InvalidObjectStateError(`Invalid state: ${state} for object type: ${this.type}`);
     }
   }
 
@@ -129,14 +120,12 @@ export class CollectibleObject implements ICollectible {
     return this.stateList.includes(state);
   }
 
-  getImage(): string | null {
-    return this.images?.get(this.state) || null;
+  isPosition(x: number, y: number): boolean {
+    return this.position.x === x && this.position.y === y;
   }
 
-  // 원래 캐릭터 별로 passable 여부를 결정하려 했는데 빡세서 안함
-  isPassable(_: Character): boolean {
-    // This method can be customized based on character properties
-    return this.canPass;
+  getImage(): string | null {
+    return this.images?.get(this.state) || null;
   }
 
   collect(character: Character): void {
@@ -152,16 +141,13 @@ export class CollectibleObject implements ICollectible {
   drop(character: Character, x: number, y: number): void {
     if (!this.isCollected()) {
       console.warn(`${this.type} is not collected and cannot be dropped.`);
-      throw new CannotDropError(
-        `${this.type} is not collected and cannot be dropped.`
-      );
+      throw new CannotDropError(`${this.type} is not collected and cannot be dropped.`);
     }
 
     this.setCollected(false);
     // Remove the object from the character's inventory
     character.removeFromInventory(this.id);
-    this.x = x;
-    this.y = y;
+    this.position = { x, y };
   }
 
   isCollected(): boolean {
@@ -176,8 +162,7 @@ export class CollectibleObject implements ICollectible {
     return {
       id: this.id,
       type: this.type,
-      x: this.x,
-      y: this.y,
+      position: this.position,
       state: this.state,
       collected: this.collected,
     };
