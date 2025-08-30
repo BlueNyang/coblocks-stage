@@ -41,8 +41,11 @@ yarn-error.log*
 *.test.js
 *.test.ts
 __tests__
+__test__
 tests
 test
 
 # VS Code
 .vscode/
+
+.directory
