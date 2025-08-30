@@ -43,8 +43,3 @@ export interface RenderData {
   position: Position;
   state: string;
 }
-
-export interface Action {
-  type: string;
-  payload: any;
-}

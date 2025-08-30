@@ -4,7 +4,7 @@ import {
   StageObjectDefinition,
   TileDefinition,
 } from "@/types/entity";
-import { Direction, EntityType, Position } from "@/types/type";
+import { EntityType } from "@/types/common";
 import { Character } from "./Character";
 import { Entity } from "./base/Entity";
 import { StageTile } from "./StageTile";
@@ -62,26 +62,11 @@ export class EntityFactory {
 
     switch (def.entityType) {
       case EntityType.CHARACTER:
-        return new Character(
-          data.id,
-          def as CharacterDefinition,
-          data.initPos,
-          data.initDirection
-        );
+        return new Character(data.id, def as CharacterDefinition, data.initPos, data.initDirection);
       case EntityType.OBJECT:
-        return new StageObject(
-          data.id,
-          def as StageObjectDefinition,
-          data.initPos,
-          data.state
-        );
+        return new StageObject(data.id, def as StageObjectDefinition, data.initPos, data.state);
       case EntityType.TILE:
-        return new StageTile(
-          data.id,
-          def as TileDefinition,
-          data.initPos,
-          data.initDirection
-        );
+        return new StageTile(data.id, def as TileDefinition, data.initPos, data.initDirection);
       default:
         console.log("[Factory] create: Unknown entity type");
         return null;

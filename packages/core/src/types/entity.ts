@@ -1,5 +1,4 @@
-import { Entity } from "@/entities/base/Entity";
-import { Direction, EntityType } from "@/types/type";
+import { EntityType } from "@/types/common";
 
 /**
  * Base interface for all entities in the game.
@@ -34,6 +33,7 @@ export interface StageObjectDefinition extends BaseEntityDefinition {
   entityType: EntityType.OBJECT;
   isInteractable: boolean;
   isCollectible: boolean;
+  relatedObjectIds: string[];
 }
 
 /**
@@ -46,7 +46,4 @@ export interface TileDefinition extends BaseEntityDefinition {
 /**
  * Entity definition in the game.
  */
-export type EntityDefinition =
-  | CharacterDefinition
-  | StageObjectDefinition
-  | TileDefinition;
+export type EntityDefinition = CharacterDefinition | StageObjectDefinition | TileDefinition;

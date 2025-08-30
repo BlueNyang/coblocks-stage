@@ -1,9 +1,10 @@
-import { EntityType, Position, RenderData } from "@/types/type";
+import { EntityType, Position, RenderData } from "@/types/common";
 import { Entity } from "./base/Entity";
 import { TileDefinition } from "@/types/entity";
 
 export class StageTile extends Entity {
-  public override entityType: EntityType = EntityType.TILE;
+  public override readonly entityType: EntityType = EntityType.TILE;
+  public override readonly isPassable: boolean;
   public color: string;
 
   constructor(
@@ -13,8 +14,8 @@ export class StageTile extends Entity {
     state?: string
   ) {
     super(id, definition.typeId, position);
+    this.isPassable = definition.isPassable;
     this.color = definition.color;
-
     this.state = state || "default";
   }
 

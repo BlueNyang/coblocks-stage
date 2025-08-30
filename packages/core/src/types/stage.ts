@@ -1,4 +1,4 @@
-import { Direction, Position } from "./type";
+import { Direction, Position } from "./common";
 
 export type CodeSet = {
   [key: string]: string;

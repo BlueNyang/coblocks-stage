@@ -1,9 +1,10 @@
-import { Position, EntityType, RenderData } from "@/types/type";
+import { Position, EntityType, RenderData } from "@/types/common";
 
 export abstract class Entity {
   public readonly id: string;
   public readonly typeId: string;
   public abstract readonly entityType: EntityType;
+  public abstract readonly isPassable: boolean;
 
   public position: Position;
   public state: string = "default";

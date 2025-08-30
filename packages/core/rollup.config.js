@@ -40,11 +40,12 @@ export default [
         entries: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
       }),
     ],
-  },{
+  },
+  {
     cache: false,
-    input: "src/worker/codeExecutor.worker.ts",
+    input: "src/workers/main.worker.ts",
     output: {
-      file: "dist/codeExecutor.worker.js",
+      file: "dist/main.worker.js",
       format: "esm",
       sourcemap: true,
     },
