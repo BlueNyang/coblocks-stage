@@ -32,14 +32,3 @@ export enum StageObjectType {
   INTERACTABLE = "interactable",
   COLLECTIBLE = "collectible",
 }
-
-/**
- * Data unit for rendering entities between main thread and worker threads.
- */
-export interface RenderData {
-  id: string;
-  entityType: EntityType;
-  typeId: string;
-  position: Position;
-  state: string;
-}

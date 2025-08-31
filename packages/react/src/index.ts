@@ -1,4 +1,21 @@
 import CoblocksStage from "./components/Stage";
-import { StageSize, StageConfig, StageData, StageState, StageProps, StageRef } from "./types/stage";
+import EntityComponent from "./components/EntityComponent";
+import { EntityComponentProps } from "./types/entity";
+import {
+  StageSize,
+  StageState,
+  StageConfig,
+  StageProps,
+  StageRef,
+} from "./types/stage";
 
-export { CoblocksStage, StageSize, StageConfig, StageData, StageState, StageProps, StageRef };
+export {
+  CoblocksStage,
+  EntityComponent,
+  EntityComponentProps,
+  StageSize,
+  StageConfig,
+  StageState,
+  StageProps,
+  StageRef,
+};

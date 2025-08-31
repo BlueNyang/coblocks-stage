@@ -7,20 +7,17 @@ import {
   useMemo,
 } from "react";
 import { useCodeExecutor } from "../hooks/hook";
-import { StageProps, StageRef, StageState, StageData } from "../types/stage";
-import {
-  RuntimeState,
-  Character,
-  StageObjects,
-  BaseTile,
-} from "@coblocks-stage/core";
+import { StageProps, StageRef } from "../types/stage";
+import { StageData } from "@coblocks-stage/core";
+import EntityComponent from "./EntityComponent";
 
 const CoblocksStage = forwardRef<StageRef, StageProps>(
   (
     {
       config,
-      data,
-      onStateChange,
+      entityDefinitions,
+      stageData,
+      codes,
       onExecutionComplete,
       onError,
       className = "",
@@ -29,228 +26,102 @@ const CoblocksStage = forwardRef<StageRef, StageProps>(
     ref
   ) => {
     const {
+      initialize,
       executeCode,
-      executeAllCharacters,
-      syncState,
       pause,
       resume,
+      stop,
       isReady,
-      logs,
-      stateChanges,
+      stageState,
+      renderDataList,
+      error,
       isExecuting,
     } = useCodeExecutor();
 
-    const [stageState, setStageState] = useState<StageState>({
-      isInitialized: false,
-      isRunning: false,
-      isPaused: false,
-      currentState: null,
-      initialState: null,
-    });
-
-    const [internalData, setInternalData] = useState<StageData | null>(
-      data || null
-    );
+    const [internalData, setInternalData] = useState<StageData | null>(null);
 
     const tileSize = config.tileSize || 32;
     const showGrid = config.showGrid ?? true;
 
-    // Create runtime state from stage data
-    const createRuntimeState = useCallback(
-      (stageData: StageData): RuntimeState => {
-        const charactersMap = new Map<number, Character>();
-        stageData.characters.forEach((char) => {
-          charactersMap.set(char.id, char);
-        });
-
-        const objectsMap = new Map<string, StageObjects>();
-        stageData.objects.forEach((obj) => {
-          objectsMap.set(obj.id, obj);
-        });
-
-        const tilesMap = new Map<string, BaseTile>();
-        stageData.tiles.forEach((tile) => {
-          const key = `${tile.x},${tile.y}`;
-          tilesMap.set(key, tile);
-        });
-
-        return {
-          character: charactersMap,
-          objects: objectsMap,
-          map: {
-            width: config.size.width,
-            height: config.size.height,
-            tiles: tilesMap,
-          },
-        };
-      },
-      [config.size]
-    );
-
-    const cloneRuntimeState = (state: RuntimeState): RuntimeState => {
-      return {
-        character: new Map(state.character),
-        objects: new Map(state.objects),
-        map: {
-          width: state.map.width,
-          height: state.map.height,
-          tiles: new Map(state.map.tiles),
-        },
-      };
-    };
-
     // Initialize stage when data is loaded and executor is ready
     useEffect(() => {
-      if (isReady && internalData && !stageState.isInitialized) {
-        try {
-          const runtimeState = createRuntimeState(internalData);
-          const newState: StageState = {
-            isInitialized: true,
-            isRunning: false,
-            isPaused: false,
-            currentState: runtimeState,
-            initialState: cloneRuntimeState(runtimeState),
-          };
+      console.log("[Stage] Initializing");
 
-          setStageState(newState);
-          syncState(runtimeState);
-          onStateChange?.(newState);
+      if (isReady) {
+        try {
+          setInternalData(stageData);
+          initialize(entityDefinitions, stageData);
         } catch (error) {
-          onError?.(error as Error);
+          onError(error as Error);
         }
       }
-    }, [
-      isReady,
-      internalData,
-      stageState.isInitialized,
-      createRuntimeState,
-      syncState,
-      onStateChange,
-      onError,
-    ]);
-
-    // Update state when stage state changes
-    const updateStageState = useCallback(
-      (updates: Partial<StageState>) => {
-        setStageState((prev) => {
-          const newState = { ...prev, ...updates };
-          onStateChange?.(newState);
-          return newState;
-        });
-      },
-      [onStateChange]
-    );
+    }, [isReady, config]);
 
     // Stage control methods
-    const startExecution = useCallback(async () => {
-      if (
-        !stageState.isInitialized ||
-        !internalData?.characterCodes ||
-        stageState.isRunning
-      ) {
+    const startExecution = useCallback(() => {
+      if (!isReady) {
+        onError(new Error("Stage is not initialized"));
+        return;
+      }
+      if (stageState.isRunning) {
+        onError(new Error("Stage is already running"));
+        return;
+      }
+      if (!internalData) {
+        onError(new Error("No internal data available for execution"));
+        return;
+      }
+      if (!codes) {
+        onError(new Error("No codes available for execution"));
         return;
       }
 
       try {
-        updateStageState({ isRunning: true, isPaused: false });
-
-        const results = await executeAllCharacters(internalData.characterCodes);
-
-        updateStageState({ isRunning: false });
-        onExecutionComplete?.(results);
+        executeCode(codes, internalData);
+        onExecutionComplete();
       } catch (error) {
-        updateStageState({ isRunning: false });
         onError?.(error as Error);
       }
-    }, [
-      stageState.isInitialized,
-      stageState.isRunning,
-      internalData?.characterCodes,
-      updateStageState,
-      executeAllCharacters,
-      onExecutionComplete,
-      onError,
-    ]);
+    }, [stageState.isRunning, internalData, onExecutionComplete, onError]);
 
-    const pauseExecution = useCallback(async () => {
+    const pauseExecution = useCallback(() => {
       if (!stageState.isRunning || stageState.isPaused) return;
 
       try {
-        await pause();
-        updateStageState({ isPaused: true });
+        pause();
       } catch (error) {
         onError?.(error as Error);
       }
-    }, [
-      stageState.isRunning,
-      stageState.isPaused,
-      pause,
-      updateStageState,
-      onError,
-    ]);
+    }, [stageState.isRunning, stageState.isPaused, pause, onError]);
 
-    const resumeExecution = useCallback(async () => {
+    const resumeExecution = useCallback(() => {
       if (!stageState.isRunning || !stageState.isPaused) return;
 
       try {
-        await resume();
-        updateStageState({ isPaused: false });
+        resume();
       } catch (error) {
         onError?.(error as Error);
       }
-    }, [
-      stageState.isRunning,
-      stageState.isPaused,
-      resume,
-      updateStageState,
-      onError,
-    ]);
+    }, [stageState.isRunning, stageState.isPaused, resume, onError]);
 
     const resetStage = useCallback(() => {
-      if (!stageState.initialState) return;
-
       try {
-        const resetState = structuredClone(stageState.initialState);
-        syncState(resetState);
-        updateStageState({
-          isRunning: false,
-          isPaused: false,
-          currentState: resetState,
-        });
+        initialize(entityDefinitions, stageData);
       } catch (error) {
         onError?.(error as Error);
       }
-    }, [stageState.initialState, syncState, updateStageState, onError]);
+    }, [entityDefinitions, stageData, initialize, onError]);
 
     const loadStageData = useCallback(
-      (newData: StageData) => {
+      (stageData: StageData) => {
         try {
-          setInternalData(newData);
-          setStageState({
-            isInitialized: false,
-            isRunning: false,
-            isPaused: false,
-            currentState: null,
-            initialState: null,
-          });
+          setInternalData(stageData);
+          initialize(entityDefinitions, stageData);
         } catch (error) {
           onError?.(error as Error);
         }
       },
-      [onError]
-    );
-
-    const executeCharacterCode = useCallback(
-      async (characterId: number, code: string) => {
-        if (!stageState.isInitialized) return;
-
-        try {
-          await executeCode(code, characterId);
-        } catch (error) {
-          onError?.(error as Error);
-        }
-      },
-      [stageState.isInitialized, executeCode, onError]
+      [entityDefinitions, stageData, initialize, onError]
     );
 
     // Expose methods via ref
@@ -263,7 +134,6 @@ const CoblocksStage = forwardRef<StageRef, StageProps>(
         reset: resetStage,
         loadData: loadStageData,
         getCurrentState: () => stageState,
-        executeCode: executeCharacterCode,
       }),
       [
         startExecution,
@@ -272,173 +142,68 @@ const CoblocksStage = forwardRef<StageRef, StageProps>(
         resetStage,
         loadStageData,
         stageState,
-        executeCharacterCode,
       ]
     );
 
     // Render grid
-    const renderGrid = useMemo(() => {
-      if (!showGrid) return null;
+    // const renderGrid = useMemo(() => {
+    //   if (!showGrid) return null;
 
-      const lines = [];
+    //   const lines = [];
 
-      // Vertical lines
-      for (let x = 0; x <= config.size.width; x++) {
-        lines.push(
-          <line
-            key={`v-${x}`}
-            x1={x * tileSize}
-            y1={0}
-            x2={x * tileSize}
-            y2={config.size.height * tileSize}
-            stroke="#ddd"
-            strokeWidth={0.5}
-          />
-        );
-      }
+    //   // Vertical lines
+    //   for (let x = 0; x <= config.size.width; x++) {
+    //     lines.push(
+    //       <line
+    //         key={`v-${x}`}
+    //         x1={x * tileSize}
+    //         y1={0}
+    //         x2={x * tileSize}
+    //         y2={config.size.height * tileSize}
+    //         stroke="#ddd"
+    //         strokeWidth={1}
+    //       />
+    //     );
+    //   }
 
-      // Horizontal lines
-      for (let y = 0; y <= config.size.height; y++) {
-        lines.push(
-          <line
-            key={`h-${y}`}
-            x1={0}
-            y1={y * tileSize}
-            x2={config.size.width * tileSize}
-            y2={y * tileSize}
-            stroke="#ddd"
-            strokeWidth={0.5}
-          />
-        );
-      }
+    //   // Horizontal lines
+    //   for (let y = 0; y <= config.size.height; y++) {
+    //     lines.push(
+    //       <line
+    //         key={`h-${y}`}
+    //         x1={0}
+    //         y1={y * tileSize}
+    //         x2={config.size.width * tileSize}
+    //         y2={y * tileSize}
+    //         stroke="#ddd"
+    //         strokeWidth={1}
+    //       />
+    //     );
+    //   }
 
-      return <g>{lines}</g>;
-    }, [showGrid, config.size, tileSize]);
+    //   return <g>{lines}</g>;
+    // }, [showGrid, config.size, tileSize]);
 
     // Render tiles
-    const renderTiles = useMemo(() => {
-      if (!internalData?.tiles) return null;
+    const renderEntities = useMemo(() => {
+      if (!renderDataList) return null;
 
-      return internalData.tiles.map((tile) => {
-        const image = tile.getImage();
-        const color = tile.getColor();
-
+      return renderDataList.map((entity) => {
+        const definition = entityDefinitions.find(
+          (def) => def.typeId === entity.typeId
+        );
+        if (!definition) return null;
         return (
-          <g key={tile.id}>
-            <rect
-              x={tile.x * tileSize}
-              y={tile.y * tileSize}
-              width={tileSize}
-              height={tileSize}
-              fill={color || "#f0f0f0"}
-              stroke={tile.canPass ? "none" : "#999"}
-              strokeWidth={tile.canPass ? 0 : 1}
-            />
-            {image && (
-              <image
-                x={tile.x * tileSize}
-                y={tile.y * tileSize}
-                width={tileSize}
-                height={tileSize}
-                href={image}
-              />
-            )}
-          </g>
+          <EntityComponent
+            key={entity.id}
+            entityDefinition={definition}
+            entity={entity}
+            cellWidth={tileSize}
+            cellHeight={tileSize}
+          />
         );
       });
-    }, [internalData?.tiles, tileSize]);
-
-    // Render objects
-    const renderObjects = useMemo(() => {
-      if (!internalData?.objects) return null;
-
-      return internalData.objects
-        .filter((obj) => !("isCollected" in obj) || !obj.isCollected())
-        .map((obj) => {
-          const image = obj.getImage();
-
-          return (
-            <g key={obj.id}>
-              <rect
-                x={obj.x * tileSize + 2}
-                y={obj.y * tileSize + 2}
-                width={tileSize - 4}
-                height={tileSize - 4}
-                fill={obj.canPass ? "rgba(0,255,0,0.3)" : "rgba(255,0,0,0.3)"}
-                rx={2}
-              />
-              {image && (
-                <image
-                  x={obj.x * tileSize + 4}
-                  y={obj.y * tileSize + 4}
-                  width={tileSize - 8}
-                  height={tileSize - 8}
-                  href={image}
-                />
-              )}
-              <text
-                x={obj.x * tileSize + tileSize / 2}
-                y={obj.y * tileSize + tileSize - 2}
-                textAnchor="middle"
-                fontSize="8"
-                fill="#333"
-              >
-                {obj.type}
-              </text>
-            </g>
-          );
-        });
-    }, [internalData?.objects, tileSize]);
-
-    // Render characters
-    const renderCharacters = useMemo(() => {
-      if (!internalData?.characters) return null;
-
-      return internalData.characters.map((char) => {
-        const pos = char.getPosition();
-        const direction = char.getDirection();
-
-        // Direction indicators
-        const directionOffsets = {
-          up: { dx: 0, dy: -4 },
-          down: { dx: 0, dy: 4 },
-          left: { dx: -4, dy: 0 },
-          right: { dx: 4, dy: 0 },
-        };
-
-        const offset = directionOffsets[direction] || { dx: 0, dy: 0 };
-
-        return (
-          <g key={char.id}>
-            <circle
-              cx={pos.x * tileSize + tileSize / 2}
-              cy={pos.y * tileSize + tileSize / 2}
-              r={tileSize / 3}
-              fill="#4A90E2"
-              stroke="#2E5C8A"
-              strokeWidth={2}
-            />
-            <text
-              x={pos.x * tileSize + tileSize / 2}
-              y={pos.y * tileSize + tileSize / 2 + 3}
-              textAnchor="middle"
-              fontSize="10"
-              fill="white"
-              fontWeight="bold"
-            >
-              {char.id}
-            </text>
-            {/* Direction indicator */}
-            <circle
-              cx={pos.x * tileSize + tileSize / 2 + offset.dx}
-              cy={pos.y * tileSize + tileSize / 2 + offset.dy}
-              r={2}
-              fill="#FFD700"
-            />
-          </g>
-        );
-      });
-    }, [internalData?.characters, tileSize]);
+    }, [renderDataList]);
 
     const stageWidth = config.size.width * tileSize;
     const stageHeight = config.size.height * tileSize;
@@ -461,7 +226,7 @@ const CoblocksStage = forwardRef<StageRef, StageProps>(
             position: "absolute",
             top: "8px",
             left: "8px",
-            zIndex: 10,
+            zIndex: 300,
             backgroundColor: "rgba(255,255,255,0.9)",
             padding: "4px 8px",
             borderRadius: "4px",
@@ -472,10 +237,10 @@ const CoblocksStage = forwardRef<StageRef, StageProps>(
         >
           <span
             style={{
-              color: stageState.isInitialized ? "#4A90E2" : "#999",
+              color: isReady ? "#4A90E2" : "#999",
             }}
           >
-            {stageState.isInitialized ? "●" : "○"} Ready
+            {isReady ? "●" : "○"} Ready
           </span>
           <span
             style={{
@@ -501,36 +266,12 @@ const CoblocksStage = forwardRef<StageRef, StageProps>(
           style={{
             display: "block",
             border: "1px solid #ddd",
+            zIndex: 250,
           }}
         >
-          {renderGrid}
-          {renderTiles}
-          {renderObjects}
-          {renderCharacters}
+          {/* {renderGrid} */}
         </svg>
-
-        {/* Debug info */}
-        {(logs.length > 0 || stateChanges.length > 0) && (
-          <div
-            style={{
-              position: "absolute",
-              bottom: "8px",
-              left: "8px",
-              right: "8px",
-              backgroundColor: "rgba(0,0,0,0.8)",
-              color: "white",
-              padding: "8px",
-              borderRadius: "4px",
-              fontSize: "10px",
-              maxHeight: "100px",
-              overflow: "auto",
-            }}
-          >
-            {logs.slice(-3).map((log, index) => (
-              <div key={index}>{log}</div>
-            ))}
-          </div>
-        )}
+        {renderEntities}
       </div>
     );
   }

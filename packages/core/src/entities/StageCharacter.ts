@@ -1,29 +1,33 @@
-import { Direction, EntityType, Position, RenderData } from "@/types/common";
+import { Direction, EntityType, Position } from "@/types/common";
 import { Entity } from "./base/Entity";
-import { CharacterDefinition } from "@/types/entity";
+import { StageCharacterDefinition } from "@/types/entity";
 import { StageObject } from "./StageObject";
+import { EntityData } from "@/types/stage";
 
-export class Character extends Entity {
+export class StageCharacter extends Entity {
   public override readonly entityType: EntityType = EntityType.CHARACTER;
   public override readonly isPassable: boolean = false;
   public direction: Direction = Direction.DOWN;
-  public color: string;
+  public state: string = "default";
   public partNumber: number;
   public inventory: StageObject[];
 
   constructor(
     id: string,
-    definition: CharacterDefinition,
+    definition: StageCharacterDefinition,
     position: Position,
+    partNumber: number,
+    color: string,
+    imageUrl?: string,
     direction?: Direction,
-    state?: string
+    state?: string,
+    inventory?: StageObject[]
   ) {
-    super(id, definition.typeId, position);
+    super(id, definition.typeId, position, color, imageUrl);
     this.direction = direction || Direction.DOWN;
-    this.color = definition.color;
-    this.partNumber = definition.partNumber;
+    this.partNumber = partNumber;
     this.state = state || "default";
-    this.inventory = [];
+    this.inventory = inventory || [];
   }
 
   public move(direction: Direction): void {
@@ -54,13 +58,18 @@ export class Character extends Entity {
     }
   }
 
-  public getRenderData(): RenderData {
+  public getRenderData(): EntityData {
     return {
+      entityType: EntityType.CHARACTER,
       id: this.id,
       typeId: this.typeId,
-      entityType: this.entityType,
+      partNumber: this.partNumber,
       position: this.position,
+      color: this.color,
+      imageUrl: this.imageUrl,
+      direction: this.direction,
       state: this.state,
+      inventory: this.inventory,
     };
   }
 }

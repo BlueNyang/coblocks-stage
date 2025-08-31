@@ -1,31 +1,29 @@
-import { EntityType, Position, RenderData } from "@/types/common";
+import { EntityType, Position } from "@/types/common";
 import { Entity } from "./base/Entity";
 import { TileDefinition } from "@/types/entity";
+import { EntityData } from "@/types/stage";
 
 export class StageTile extends Entity {
   public override readonly entityType: EntityType = EntityType.TILE;
   public override readonly isPassable: boolean;
-  public color: string;
 
-  constructor(
-    id: string,
-    definition: TileDefinition,
-    position: Position,
-    state?: string
-  ) {
-    super(id, definition.typeId, position);
+  constructor(id: string, definition: TileDefinition, position: Position) {
+    super(
+      id,
+      definition.typeId,
+      position,
+      definition.color,
+      definition.imageUrl
+    );
     this.isPassable = definition.isPassable;
-    this.color = definition.color;
-    this.state = state || "default";
   }
 
-  public override getRenderData(): RenderData {
+  public override getRenderData(): EntityData {
     return {
+      entityType: EntityType.TILE,
       id: this.id,
       typeId: this.typeId,
-      entityType: this.entityType,
       position: this.position,
-      state: this.state,
     };
   }
 }

@@ -1,15 +1,15 @@
 import {
-  CharacterDefinition,
+  StageCharacterDefinition,
   EntityDefinition,
   StageObjectDefinition,
   TileDefinition,
 } from "@/types/entity";
 import { EntityType } from "@/types/common";
-import { Character } from "./Character";
+import { StageCharacter } from "./StageCharacter";
 import { Entity } from "./base/Entity";
 import { StageTile } from "./StageTile";
 import { StageObject } from "./StageObject";
-import { ObjectData } from "@/types/stage";
+import { EntityData } from "@/types/stage";
 
 export class EntityFactory {
   private static instance: EntityFactory;
@@ -52,7 +52,7 @@ export class EntityFactory {
    * @param initDirc The initial direction of the entity.
    * @returns The created entity instance or null if the definition is not found.
    */
-  public create(typeId: string, data: ObjectData): Entity | null {
+  public create(typeId: string, data: EntityData): Entity | null {
     const def = this.registry.get(typeId);
 
     if (!def) {
@@ -62,11 +62,32 @@ export class EntityFactory {
 
     switch (def.entityType) {
       case EntityType.CHARACTER:
-        return new Character(data.id, def as CharacterDefinition, data.initPos, data.initDirection);
+        if (data.entityType !== EntityType.CHARACTER) return null;
+        return new StageCharacter(
+          data.id,
+          def as StageCharacterDefinition,
+          data.position,
+          data.partNumber,
+          data.color,
+          data.imageUrl,
+          data.direction,
+          data.state,
+          data.inventory
+        );
       case EntityType.OBJECT:
-        return new StageObject(data.id, def as StageObjectDefinition, data.initPos, data.state);
+        if (data.entityType !== EntityType.OBJECT) return null;
+        return new StageObject(
+          data.id,
+          def as StageObjectDefinition,
+          data.position,
+          data.color,
+          data.imageUrl,
+          data.state,
+          data.relatedObjectIds
+        );
       case EntityType.TILE:
-        return new StageTile(data.id, def as TileDefinition, data.initPos, data.initDirection);
+        if (data.entityType !== EntityType.TILE) return null;
+        return new StageTile(data.id, def as TileDefinition, data.position);
       default:
         console.log("[Factory] create: Unknown entity type");
         return null;

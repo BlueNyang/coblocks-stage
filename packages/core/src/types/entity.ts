@@ -11,7 +11,6 @@ import { EntityType } from "@/types/common";
 export interface BaseEntityDefinition {
   typeId: string;
   entityType: EntityType;
-  color: string;
   isPassable: boolean;
 }
 
@@ -19,9 +18,8 @@ export interface BaseEntityDefinition {
  * Character definition in the game.
  * @field direction: The current movement direction of the character.
  */
-export interface CharacterDefinition extends BaseEntityDefinition {
+export interface StageCharacterDefinition extends BaseEntityDefinition {
   entityType: EntityType.CHARACTER;
-  partNumber: number;
 }
 
 /**
@@ -33,7 +31,6 @@ export interface StageObjectDefinition extends BaseEntityDefinition {
   entityType: EntityType.OBJECT;
   isInteractable: boolean;
   isCollectible: boolean;
-  relatedObjectIds: string[];
 }
 
 /**
@@ -41,9 +38,14 @@ export interface StageObjectDefinition extends BaseEntityDefinition {
  */
 export interface TileDefinition extends BaseEntityDefinition {
   entityType: EntityType.TILE;
+  color: string;
+  imageUrl?: string;
 }
 
 /**
  * Entity definition in the game.
  */
-export type EntityDefinition = CharacterDefinition | StageObjectDefinition | TileDefinition;
+export type EntityDefinition =
+  | StageCharacterDefinition
+  | StageObjectDefinition
+  | TileDefinition;

@@ -9,7 +9,10 @@ self.onmessage = (event: MessageEvent<WorkerCommand>) => {
   switch (type) {
     case WorkerMessage.INITIALIZE:
       workerSandbox = new WorkerSandbox(payload.executionSpeed);
-      workerSandbox.initialize(payload.entityDefinitions);
+      workerSandbox.initialize(
+        payload.entityDefinitions,
+        payload.initStageData
+      );
       break;
     case WorkerMessage.EXECUTE:
       workerSandbox.run(payload.codes, payload.stageData);

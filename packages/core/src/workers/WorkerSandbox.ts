@@ -1,11 +1,11 @@
 import { Entity } from "@/entities/base/Entity";
-import { EntityFactory } from "@/entities/EntityFactory";
+import { EntityFactory } from "../entities/EntityFactory";
 import { EntityDefinition } from "@/types/entity";
-import { CodeSet, StageData } from "@/types/stage";
-import { Direction, Position, RenderData } from "@/types/common";
+import { CodeSet, EntityData, StageData } from "@/types/stage";
+import { Direction, Position } from "@/types/common";
 import { WorkerAPI } from "./WorkerAPI";
 import { Action, ActionType, WorkerMessage } from "@/types/workers";
-import { Character } from "@/entities/Character";
+import { StageCharacter } from "@/entities/StageCharacter";
 import { StageObject } from "@/entities/StageObject";
 import { StageTile } from "@/entities/StageTile";
 import {
@@ -16,12 +16,11 @@ import {
   ObjectNotInteractable,
   WorkerError,
 } from "@/errors/workerError";
-import { error } from "console";
 
 export class WorkerSandbox {
   private factory: EntityFactory;
 
-  private characters: Map<string, Character>;
+  private characters: Map<string, StageCharacter>;
   private stageObjects: Map<string, StageObject>;
   private stageTiles: Map<string, StageTile>;
 
@@ -40,20 +39,32 @@ export class WorkerSandbox {
     this.stageTiles = new Map();
   }
 
-  public initialize(entityDefinitions: EntityDefinition[]) {
+  public initialize(
+    entityDefinitions: EntityDefinition[],
+    initStageData: StageData
+  ) {
     for (const def of entityDefinitions) {
       this.factory.registerEntity(def);
     }
+
+    this.setupStage(initStageData);
   }
 
   public run(codes: CodeSet, initStageData: StageData) {
-    this.setupStage(initStageData);
+    // this.setupStage(initStageData);
 
     for (const charId in codes) {
       const code: string = codes[charId];
       const api = new WorkerAPI(this, charId);
-      const generator = new Function("api", code);
-      this.executors.set(charId, generator(api) as Generator);
+      const generator = new Function(
+        "api",
+        `return function* generatorExecutor() {
+          ${code}
+        }
+      `
+      )(api) as GeneratorFunction;
+
+      this.executors.set(charId, generator(api));
     }
 
     this.nextTurn();
@@ -61,25 +72,40 @@ export class WorkerSandbox {
 
   private setupStage(stageData: StageData) {
     for (const characterData of stageData.characters) {
-      const character = this.factory.create(characterData.typeId, characterData) as Character;
+      const character = this.factory.create(
+        characterData.typeId,
+        characterData
+      ) as StageCharacter;
+
       if (character) {
         this.characters.set(character.id, character);
       }
     }
 
     for (const objectData of stageData.objects) {
-      const stageObject = this.factory.create(objectData.typeId, objectData) as StageObject;
+      const stageObject = this.factory.create(
+        objectData.typeId,
+        objectData
+      ) as StageObject;
       if (stageObject) {
         this.stageObjects.set(stageObject.id, stageObject);
       }
     }
 
     for (const tileData of stageData.tiles) {
-      const stageTile = this.factory.create(tileData.typeId, tileData) as StageTile;
+      const stageTile = this.factory.create(
+        tileData.typeId,
+        tileData
+      ) as StageTile;
       if (stageTile) {
         this.stageTiles.set(stageTile.id, stageTile);
       }
     }
+
+    postMessage({
+      type: WorkerMessage.UPDATE,
+      payload: this.getRenderDataSet(),
+    });
   }
 
   public pause(): void {
@@ -157,15 +183,20 @@ export class WorkerSandbox {
   private nextTurn(): void {
     const turnActions: Action[] = [];
 
-    this.executors.forEach((executor, charId) => {
-      const action = executor.next();
+    const charList = Array.from(this.executors.keys());
 
-      if (action.done) {
-        this.executors.delete(charId);
-        return;
+    charList.forEach((charId) => {
+      const executor = this.executors.get(charId);
+
+      if (executor) {
+        const action = executor.next();
+
+        if (action.done) {
+          this.executors.delete(charId);
+        } else {
+          turnActions.push(action.value as Action);
+        }
       }
-
-      turnActions.push(action.value as Action);
     });
 
     const result: boolean = this.processTurnActions(turnActions);
@@ -207,6 +238,7 @@ export class WorkerSandbox {
   }
 
   private actionBranch(action: Action): void {
+    console.log("[WorkerSandbox] Action Branch:", action);
     switch (action.type) {
       case ActionType.MOVE:
         this.moveAction(action.payload);
@@ -225,6 +257,9 @@ export class WorkerSandbox {
       case ActionType.TURN:
         this.turnAction(action.payload);
         break;
+      case ActionType.LOG:
+        this.logAction(action.payload);
+        break;
       default:
         console.warn(`[WorkerSandbox] Unknown action type: ${action.type}`);
         break;
@@ -240,22 +275,44 @@ export class WorkerSandbox {
       throw new CharacterNotFound(`Character(id:${characterId}) not found`);
     }
 
-    const newPosition = this.getNewPosition(character.position, direction);
+    const targetDirection =
+      direction === "front" ? character.direction : direction;
+    const newPosition = this.getNewPosition(
+      character.position,
+      targetDirection
+    );
 
     if (this.isPassable(newPosition)) {
-      character.move(direction);
+      character.move(targetDirection);
     } else {
-      console.log("[WorkerSandbox] Move blocked:", characterId);
-      throw new CannotMoveError(`(${newPosition.x}, ${newPosition.y}) is blocked`);
+      console.log(
+        "[WorkerSandbox] Move blocked:",
+        characterId,
+        "direction:",
+        targetDirection
+      );
+      throw new CannotMoveError(
+        `(${newPosition.x}, ${newPosition.y}) is blocked`
+      );
     }
   }
 
   private interactAction(payload: any): void {
-    const { characterId: characterId, targetId: targetId } = payload;
+    const { characterId: characterId } = payload;
     const character = this.characters.get(characterId);
     if (!character) {
-      console.log("[WorkerSandbox] Interacting character not found:", characterId);
+      console.log(
+        "[WorkerSandbox] Interacting character not found:",
+        characterId
+      );
       throw new CharacterNotFound(`Character(id:${characterId}) not found`);
+    }
+
+    const targetId = this.getObjectIdAtFront(character);
+
+    if (!targetId) {
+      console.log("[WorkerSandbox] Interacting targetId not found");
+      throw new ObjectNotFound(`targetId not found`);
     }
 
     const object = this.stageObjects.get(targetId);
@@ -265,23 +322,70 @@ export class WorkerSandbox {
     }
 
     if (!object.isInteractable) {
-      console.log("[WorkerSandbox] Target object is not interactable:", targetId);
-      throw new ObjectNotInteractable(`Object(id:${targetId}) is not interactable`);
+      console.log(
+        "[WorkerSandbox] Target object is not interactable:",
+        targetId
+      );
+      throw new ObjectNotInteractable(
+        `Object(id:${targetId}) is not interactable`
+      );
     }
 
     if (object.state !== "interacted") {
+      if (object.relatedObjectIds.length > 0) {
+        console.log(
+          "[WorkerSandbox] Interacting with related objects:",
+          object.relatedObjectIds
+        );
+        object.relatedObjectIds.forEach((relatedId) => {
+          const relatedObject = this.stageObjects.get(relatedId);
+          if (!relatedObject) return;
+
+          if (relatedObject.isCollectible) {
+            const key = character.inventory.find(
+              (item) => item.id === relatedId
+            );
+            if (!key) {
+              console.log(
+                "[WorkerSandbox] Key not found in inventory:",
+                relatedId
+              );
+              return;
+            }
+          }
+          if (relatedObject.isInteractable) {
+            relatedObject.state = "interacted";
+          }
+        });
+      }
       object.state = "interacted";
     } else {
-      console.log("[WorkerSandbox] Target object has already been interacted with:", targetId);
+      console.log(
+        "[WorkerSandbox] Target object has already been interacted with:",
+        targetId
+      );
     }
   }
 
   private collectAction(payload: any): void {
-    const { characterId: characterId, targetId: targetId } = payload;
+    const characterId = payload.characterId;
     const character = this.characters.get(characterId);
     if (!character) {
-      console.log("[WorkerSandbox] Collecting character not found:", characterId);
+      console.log(
+        "[WorkerSandbox] Collecting character not found:",
+        characterId
+      );
       throw new CharacterNotFound(`Character(id:${characterId}) not found`);
+    }
+
+    const targetId =
+      payload.objectId === "front"
+        ? this.getObjectIdAtFront(character)
+        : payload.objectId;
+
+    if (!targetId) {
+      console.log("[WorkerSandbox] Collecting targetId not found");
+      throw new ObjectNotFound(`targetId not found`);
     }
 
     const object = this.stageObjects.get(targetId);
@@ -291,16 +395,39 @@ export class WorkerSandbox {
     }
 
     if (!object.isCollectible) {
-      console.log("[WorkerSandbox] Collecting object is not collectible:", targetId);
-      throw new ObjectNotCollectible(`Object(id:${targetId}) is not collectible`);
+      console.log(
+        "[WorkerSandbox] Collecting object is not collectible:",
+        targetId
+      );
+      throw new ObjectNotCollectible(
+        `Object(id:${targetId}) is not collectible`
+      );
     }
 
     character.collect(object);
     this.stageObjects.delete(object.id);
   }
 
+  private getObjectIdAtFront(character: StageCharacter): string {
+    const position = character.position;
+    const direction = character.direction;
+
+    const frontObjectPosition = this.getNewPosition(position, direction);
+    console.log("[WorkerSandbox] Front object position:", frontObjectPosition);
+
+    const object = Array.from(this.stageObjects.values()).find((obj) =>
+      this.isSamePosition(obj.position, frontObjectPosition)
+    );
+
+    return object ? object.id : "";
+  }
+
   private dropAction(payload: any): void {
-    const { characterId: characterId, objectId: objectId, position: position } = payload;
+    const {
+      characterId: characterId,
+      objectId: objectId,
+      position: position,
+    } = payload;
     const character = this.characters.get(characterId);
     if (!character) {
       console.log("[WorkerSandbox] Dropping character not found:", characterId);
@@ -330,6 +457,11 @@ export class WorkerSandbox {
     character.direction = direction;
   }
 
+  private logAction(payload: any): void {
+    const { characterId, message } = payload;
+    console.log(`[WorkerSandbox] ${characterId}: ${message}`);
+  }
+
   private getNewPosition(currentPos: Position, direction: Direction): Position {
     switch (direction) {
       case Direction.UP:
@@ -349,8 +481,8 @@ export class WorkerSandbox {
     return pos1.x === pos2.x && pos1.y === pos2.y;
   }
 
-  private getRenderDataSet(): RenderData[] {
-    const renderDataSet: RenderData[] = [];
+  private getRenderDataSet(): EntityData[] {
+    const renderDataSet: EntityData[] = [];
 
     const entities: Entity[] = [
       ...this.characters.values(),
@@ -359,13 +491,19 @@ export class WorkerSandbox {
     ];
 
     for (const entity of entities) {
-      const renderData: RenderData = {
-        id: entity.id,
-        typeId: entity.typeId,
-        entityType: entity.entityType,
-        position: entity.position,
-        state: entity.state,
-      };
+      // const renderData: EntityData = {
+      //   id: entity.id,
+      //   typeId: entity.typeId,
+      //   entityType: entity.entityType,
+      //   position: entity.position,
+      //   state: entity.state,
+      //   color: entity.color,
+      //   imageUrl: entity.imageUrl,
+      //   relatedObjectIds: (entity as StageObject).relatedObjectIds,
+      //   direction: (entity as Character).direction,
+      //   inventory: (entity as Character).inventory,
+      // };
+      const renderData = entity.getRenderData();
       renderDataSet.push(renderData);
     }
 

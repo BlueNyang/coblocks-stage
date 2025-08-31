@@ -1,7 +1,6 @@
 // worker/worker.types.ts
 import { EntityDefinition } from "./entity";
-import { RenderData } from "./common";
-import { CodeSet } from "./stage";
+import { CodeSet, EntityData, StageData } from "./stage";
 
 export interface Action {
   type: ActionType;
@@ -15,6 +14,7 @@ export enum ActionType {
   DROP = "DROP",
   WAIT = "WAIT",
   TURN = "TURN",
+  LOG = "LOG",
 }
 
 export enum WorkerMessage {
@@ -34,6 +34,7 @@ export interface InitializeCommand {
   payload: {
     executionSpeed: number;
     entityDefinitions: EntityDefinition[];
+    initStageData: StageData;
   };
 }
 
@@ -41,7 +42,7 @@ export interface ExecuteCommand {
   type: WorkerMessage.EXECUTE;
   payload: {
     codes: CodeSet;
-    stageData: any;
+    stageData: StageData;
   };
 }
 
@@ -70,12 +71,14 @@ export type WorkerCommand =
 // WorkerSandbox -> Main
 export interface TurnUpdateMessage {
   type: WorkerMessage.UPDATE;
-  payload: RenderData[];
+  data: {
+    renderDataList: EntityData[];
+  };
 }
 
 export interface ExecutionResultMessage {
   type: WorkerMessage.FINISHED;
-  payload: {
+  data: {
     success: boolean;
     reason?: string;
   };
@@ -83,10 +86,13 @@ export interface ExecutionResultMessage {
 
 export interface ErrorMessage {
   type: WorkerMessage.ERROR;
-  payload: {
+  data: {
     success: boolean;
     reason: string;
   };
 }
 
-export type WorkerResponse = TurnUpdateMessage | ExecutionResultMessage | ErrorMessage;
+export type WorkerResponse =
+  | TurnUpdateMessage
+  | ExecutionResultMessage
+  | ErrorMessage;

@@ -66,6 +66,16 @@ export class WorkerAPI {
     };
   }
 
+  public log(message: string): Action {
+    return {
+      type: ActionType.LOG,
+      payload: {
+        characterId: this.owner,
+        message,
+      },
+    };
+  }
+
   public isPassable(position: Position): boolean {
     return this.workerSandbox.isPassable(position);
   }
