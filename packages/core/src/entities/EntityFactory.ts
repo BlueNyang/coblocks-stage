@@ -69,7 +69,7 @@ export class EntityFactory {
           data.position,
           data.partNumber,
           data.color,
-          data.imageUrl,
+          data.imageSet,
           data.direction,
           data.state,
           data.inventory
@@ -81,7 +81,7 @@ export class EntityFactory {
           def as StageObjectDefinition,
           data.position,
           data.color,
-          data.imageUrl,
+          data.imageSet,
           data.state,
           data.relatedObjectIds
         );

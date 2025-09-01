@@ -1,5 +1,6 @@
 import { StageObject } from "@/entities/StageObject";
 import { Direction, EntityType, Position } from "./common";
+import { ImageSet } from "./entity";
 
 export type CodeSet = {
   [key: string]: string;
@@ -12,7 +13,7 @@ export interface ObjectData {
   position: Position;
   state?: string;
   color: string;
-  imageUrl?: string;
+  imageSet?: ImageSet;
   relatedObjectIds?: string[];
 }
 
@@ -23,7 +24,7 @@ export interface StageCharacterData {
   typeId: string;
   position: Position;
   color: string;
-  imageUrl?: string;
+  imageSet?: ImageSet;
   direction?: Direction;
   state?: string;
   inventory?: StageObject[];

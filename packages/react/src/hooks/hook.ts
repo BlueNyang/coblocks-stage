@@ -7,6 +7,7 @@ import {
   EntityData,
   StageData,
   WorkerMessage,
+  WorkerFactory,
 } from "@coblocks-stage/core";
 import { StageState } from "@/types/stage";
 
@@ -37,12 +38,7 @@ export const useCodeExecutor = (): UseCodeExecutionResult => {
   useEffect(() => {
     console.log("[Stage Hook] Initializing worker");
 
-    const worker = new Worker(
-      "/node_modules/@coblocks-stage/core/dist/main.worker.js",
-      {
-        type: "module",
-      }
-    );
+    const worker = WorkerFactory.createWorker();
 
     worker.onmessage = (event) => {
       const { type, payload } = event.data;
@@ -81,8 +77,7 @@ export const useCodeExecutor = (): UseCodeExecutionResult => {
   const initialize = useCallback(
     (definitions: EntityDefinition[], stageData: StageData): void => {
       console.log("[Stage Hook] initialize");
-      if (!worker)
-        throw new WorkerNotInitializedError("Worker is not initialized.");
+      if (!worker) throw new WorkerNotInitializedError("Worker is not initialized.");
 
       const data: InitializeCommand = {
         type: WorkerMessage.INITIALIZE,

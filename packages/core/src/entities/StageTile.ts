@@ -13,7 +13,7 @@ export class StageTile extends Entity {
       definition.typeId,
       position,
       definition.color,
-      definition.imageUrl
+      definition.imageSet
     );
     this.isPassable = definition.isPassable;
   }

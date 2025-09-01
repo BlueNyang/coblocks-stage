@@ -1,12 +1,7 @@
 import { StageCharacter } from "./entities/StageCharacter";
 import { StageObject } from "./entities/StageObject";
 import { StageTile } from "./entities/StageTile";
-import {
-  Position,
-  Direction,
-  EntityType,
-  StageObjectType,
-} from "./types/common";
+import { Position, Direction, EntityType, StageObjectType } from "./types/common";
 import {
   StageCharacterDefinition,
   StageObjectDefinition,
@@ -35,6 +30,7 @@ import {
   WorkerResponse,
 } from "./types/workers";
 import { WorkerAPI } from "./workers/WorkerAPI";
+import { WorkerFactory } from "./workers/workerFactory";
 import { WorkerSandbox } from "./workers/WorkerSandbox";
 
 export {
@@ -68,4 +64,5 @@ export {
   WorkerResponse,
   WorkerAPI,
   WorkerSandbox,
+  WorkerFactory,
 };

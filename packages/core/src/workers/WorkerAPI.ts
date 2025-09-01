@@ -27,12 +27,11 @@ export class WorkerAPI {
     };
   }
 
-  public collect(objectId: string): Action {
+  public collect(): Action {
     return {
       type: ActionType.COLLECT,
       payload: {
         characterId: this.owner,
-        objectId,
       },
     };
   }
@@ -78,5 +77,9 @@ export class WorkerAPI {
 
   public isPassable(position: Position): boolean {
     return this.workerSandbox.isPassable(position);
+  }
+
+  public getPosition(): Position | null {
+    return this.workerSandbox.getPosition(this.owner);
   }
 }

@@ -1,5 +1,5 @@
 import { EntityType, Position } from "@/types/common";
-import { StageObjectDefinition } from "@/types/entity";
+import { ImageSet, StageObjectDefinition } from "@/types/entity";
 import { Entity } from "./base/Entity";
 import { EntityData } from "@/types/stage";
 
@@ -16,11 +16,11 @@ export class StageObject extends Entity {
     definition: StageObjectDefinition,
     position: Position,
     color: string,
-    imageUrl?: string,
+    imageSet?: ImageSet,
     state?: string,
     relatedObjectIds?: string[]
   ) {
-    super(id, definition.typeId, position, color, imageUrl);
+    super(id, definition.typeId, position, color, imageSet);
     this.isInteractable = definition.isInteractable;
     this.isCollectible = definition.isCollectible;
     this.isPassable = definition.isPassable;
@@ -37,7 +37,7 @@ export class StageObject extends Entity {
       position: this.position,
       state: this.state,
       color: this.color,
-      imageUrl: this.imageUrl,
+      imageSet: this.imageSet,
       relatedObjectIds: this.relatedObjectIds,
     };
   }

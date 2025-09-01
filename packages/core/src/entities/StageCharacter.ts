@@ -1,6 +1,6 @@
 import { Direction, EntityType, Position } from "@/types/common";
 import { Entity } from "./base/Entity";
-import { StageCharacterDefinition } from "@/types/entity";
+import { ImageSet, StageCharacterDefinition } from "@/types/entity";
 import { StageObject } from "./StageObject";
 import { EntityData } from "@/types/stage";
 
@@ -18,12 +18,12 @@ export class StageCharacter extends Entity {
     position: Position,
     partNumber: number,
     color: string,
-    imageUrl?: string,
+    imageSet?: ImageSet,
     direction?: Direction,
     state?: string,
     inventory?: StageObject[]
   ) {
-    super(id, definition.typeId, position, color, imageUrl);
+    super(id, definition.typeId, position, color, imageSet);
     this.direction = direction || Direction.DOWN;
     this.partNumber = partNumber;
     this.state = state || "default";
@@ -66,7 +66,7 @@ export class StageCharacter extends Entity {
       partNumber: this.partNumber,
       position: this.position,
       color: this.color,
-      imageUrl: this.imageUrl,
+      imageSet: this.imageSet,
       direction: this.direction,
       state: this.state,
       inventory: this.inventory,

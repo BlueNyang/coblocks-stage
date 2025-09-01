@@ -39,7 +39,7 @@ export interface StageObjectDefinition extends BaseEntityDefinition {
 export interface TileDefinition extends BaseEntityDefinition {
   entityType: EntityType.TILE;
   color: string;
-  imageUrl?: string;
+  imageSet?: ImageSet;
 }
 
 /**
@@ -49,3 +49,7 @@ export type EntityDefinition =
   | StageCharacterDefinition
   | StageObjectDefinition
   | TileDefinition;
+
+export type ImageSet = {
+  [key: string]: string;
+};

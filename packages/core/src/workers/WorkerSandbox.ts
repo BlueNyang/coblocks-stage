@@ -162,6 +162,11 @@ export class WorkerSandbox {
     return true;
   }
 
+  public getPosition(charId: string): Position | null {
+    const character = this.characters.get(charId);
+    return character ? character.position : null;
+  }
+
   private getObjectAtPos(position: Position): StageObject | null {
     for (const object of this.stageObjects.values()) {
       if (this.isSamePosition(object.position, position)) {
@@ -378,10 +383,7 @@ export class WorkerSandbox {
       throw new CharacterNotFound(`Character(id:${characterId}) not found`);
     }
 
-    const targetId =
-      payload.objectId === "front"
-        ? this.getObjectIdAtFront(character)
-        : payload.objectId;
+    const targetId = this.getObjectIdAtFront(character);
 
     if (!targetId) {
       console.log("[WorkerSandbox] Collecting targetId not found");

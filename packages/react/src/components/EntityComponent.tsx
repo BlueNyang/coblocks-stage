@@ -5,6 +5,7 @@ import {
   ObjectData,
   TileData,
   TileDefinition,
+  Direction,
 } from "@coblocks-stage/core";
 import React, { type JSX } from "react";
 
@@ -42,6 +43,8 @@ const getCharacterComponent = (
 ): JSX.Element => {
   const zIndex = 200;
 
+  const rotation = getRotation(entity.direction);
+
   const style: React.CSSProperties = {
     position: "absolute",
     left: `${entity.position.x * cellWidth}px`,
@@ -50,14 +53,15 @@ const getCharacterComponent = (
     width: `${cellWidth}px`,
     height: `${cellHeight}px`,
     transition: "all 0.3s ease-in-out",
+    transform: rotation,
     zIndex: zIndex,
   };
 
   return (
     <div style={style}>
-      {entity.imageUrl ? (
+      {entity.imageSet ? (
         <img
-          src={entity.imageUrl}
+          src={entity.imageSet[entity.state]}
           style={{
             width: "100%",
             height: "100%",
@@ -73,8 +77,26 @@ const getCharacterComponent = (
           <circle
             cx={cellWidth / 2}
             cy={cellHeight / 2}
-            r={cellWidth / 2}
+            r={cellWidth / 2 - 6}
             fill="currentColor"
+            stroke="black"
+            strokeWidth="3"
+          />
+          <circle
+            cx={cellWidth / 2 - 10}
+            cy={10}
+            r="5"
+            fill="white"
+            stroke="black"
+            strokeWidth="2"
+          />
+          <circle
+            cx={cellWidth / 2 + 10}
+            cy={10}
+            r="5"
+            fill="white"
+            stroke="black"
+            strokeWidth="2"
           />
         </svg>
       )}
@@ -102,9 +124,9 @@ const getObjectComponent = (
 
   return (
     <div style={style}>
-      {entity.imageUrl ? (
+      {entity.imageSet ? (
         <img
-          src={entity.imageUrl}
+          src={entity.imageSet[entity.state || "default"]}
           style={{
             width: "100%",
             height: "100%",
@@ -146,8 +168,8 @@ const getTileComponent = (
 
   return (
     <div style={style}>
-      {definition.imageUrl ? (
-        <img src={definition.imageUrl} />
+      {definition.imageSet ? (
+        <img src={definition.imageSet["default"]} />
       ) : (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -159,3 +181,18 @@ const getTileComponent = (
     </div>
   );
 };
+
+function getRotation(direction: Direction): string {
+  switch (direction) {
+    case Direction.UP:
+      return "rotate(0deg)";
+    case Direction.RIGHT:
+      return "rotate(90deg)";
+    case Direction.DOWN:
+      return "rotate(180deg)";
+    case Direction.LEFT:
+      return "rotate(270deg)";
+    default:
+      return "rotate(0deg)";
+  }
+}
