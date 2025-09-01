@@ -42,7 +42,7 @@ export default [
         jsx: "react-jsx",
       }),
     ],
-    external: ["@coblocks-stage/core", "react", "react-dom"],
+    external: ["@croffledev/coblocks-stage-core", "react", "react-dom"],
   },
   {
     input: "src/index.ts",

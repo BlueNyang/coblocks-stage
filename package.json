@@ -1,10 +1,11 @@
 {
-  "name": "coblocks-stage",
+  "name": "@croffledev/coblocks-stage",
   "private": true,
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
+    "clean": "turbo clean",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "check-types": "turbo run check-types"
   },

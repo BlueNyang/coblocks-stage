@@ -47,7 +47,7 @@ export default [
     output: {
       file: "dist/main.worker.js",
       format: "esm",
-      sourcemap: true,
+      sourcemap: false,
     },
     plugins: [
       resolve(),

@@ -8,7 +8,7 @@ import {
 } from "react";
 import { useCodeExecutor } from "../hooks/hook";
 import { StageProps, StageRef } from "../types/stage";
-import { StageData } from "@coblocks-stage/core";
+import { StageData } from "@croffledev/coblocks-stage-core";
 import EntityComponent from "./EntityComponent";
 
 const CoblocksStage = forwardRef<StageRef, StageProps>(

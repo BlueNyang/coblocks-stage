@@ -1,7 +1,7 @@
 {
-  "name": "@coblocks-stage/react",
-  "version": "1.0.0",
-  "description": "",
+  "name": "@croffledev/coblocks-stage-react",
+  "version": "1.0.1",
+  "description": "Stage React Component for coblocks",
   "author": "BlueNyang",
   "main": "dist/index.js",
   "module": "./dist/index.mjs",
@@ -22,7 +22,7 @@
     "build": "rollup -c"
   },
   "dependencies": {
-    "@coblocks-stage/core": "workspace:*",
+    "@croffledev/coblocks-stage-core": "*",
     "react": "^19.1.1"
   },
   "devDependencies": {
@@ -41,6 +41,19 @@
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
-  "keywords": [],
-  "license": "ISC"
+  "license": "MIT",
+  "keywords": [
+    "coblocks",
+    "stage",
+    "library",
+    "react",
+    "component"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

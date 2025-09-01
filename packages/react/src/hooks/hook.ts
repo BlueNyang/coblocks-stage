@@ -8,7 +8,7 @@ import {
   StageData,
   WorkerMessage,
   WorkerFactory,
-} from "@coblocks-stage/core";
+} from "@croffledev/coblocks-stage-core";
 import { StageState } from "@/types/stage";
 
 interface UseCodeExecutionResult {
@@ -77,7 +77,8 @@ export const useCodeExecutor = (): UseCodeExecutionResult => {
   const initialize = useCallback(
     (definitions: EntityDefinition[], stageData: StageData): void => {
       console.log("[Stage Hook] initialize");
-      if (!worker) throw new WorkerNotInitializedError("Worker is not initialized.");
+      if (!worker)
+        throw new WorkerNotInitializedError("Worker is not initialized.");
 
       const data: InitializeCommand = {
         type: WorkerMessage.INITIALIZE,

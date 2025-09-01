@@ -1,4 +1,8 @@
-import { CodeSet, EntityDefinition, StageData } from "@coblocks-stage/core/";
+import {
+  CodeSet,
+  EntityDefinition,
+  StageData,
+} from "@croffledev/coblocks-stage-core";
 
 export interface StageSize {
   width: number;

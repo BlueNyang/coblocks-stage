@@ -59,9 +59,9 @@ importers:
 
   packages/react:
     dependencies:
-      '@coblocks-stage/core':
-        specifier: workspace:*
-        version: link:../core
+      '@croffledev/coblocks-stage-core':
+        specifier: '*'
+        version: 1.0.0
       react:
         specifier: ^19.1.1
         version: 19.1.1
@@ -102,12 +102,12 @@ importers:
 
   packages/test:
     dependencies:
-      '@coblocks-stage/core':
-        specifier: workspace:*
-        version: link:../core
-      '@coblocks-stage/react':
-        specifier: workspace:*
-        version: link:../react
+      '@croffledev/coblocks-stage-core':
+        specifier: '*'
+        version: 1.0.0
+      '@croffledev/coblocks-stage-react':
+        specifier: '*'
+        version: 1.0.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)
       react:
         specifier: ^19.1.0
         version: 19.1.1
@@ -167,6 +167,15 @@ packages:
   '@babel/helper-validator-identifier@7.27.1':
     resolution: {integrity: sha512-D2hP9eA+Sqx1kBZgzxZh0y1trbuU+JoDkiEwqhQ36nodYqJwyEIhPSdMNd7lOm/4io72luTPWH20Yda0xOuUow==}
     engines: {node: '>=6.9.0'}
+
+  '@croffledev/coblocks-stage-core@1.0.0':
+    resolution: {integrity: sha512-TbRskzDHmJ846NX7pAMmR0ln03N2xtKVnk9hi0rLhE7ZIeUHv6HI/Z/3VNl5myTg4AlvgB2kctGgfHnxnR89HA==}
+
+  '@croffledev/coblocks-stage-react@1.0.0':
+    resolution: {integrity: sha512-BWGqzkHnqdeinSHPK5xfKtx/lUbcBmaNTM/0s3/HaYaqaUbJ7I3ld+0aAxhFviyEKY5g73a8M4YxVw8lhkWiQQ==}
+    peerDependencies:
+      react: '>=16.8.0'
+      react-dom: '>=16.8.0'
 
   '@csstools/color-helpers@5.0.2':
     resolution: {integrity: sha512-JqWH1vsgdGcw2RR6VliXXdA0/59LttzlU8UlRT/iUUsEeWfYq8I+K0yhihEUTTHLRm1EXvpsCx3083EU15ecsA==}
@@ -809,6 +818,7 @@ packages:
   acorn@8.15.0:
     resolution: {integrity: sha512-NZyJarBfL7nWwIq+FDL6Zp/yHEhePMNnnJ0y3qfieCrmNvYct8uvtiV41UvlSe6apAfk0fY1FbWx+NwfmpvtTg==}
     engines: {node: '>=0.4.0'}
+    hasBin: true
 
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
@@ -1287,6 +1297,7 @@ packages:
   prettier@3.6.2:
     resolution: {integrity: sha512-I7AIg5boAr5R0FFtJ6rCfD+LFsWHp81dolrFD8S79U9tb8Az2nGrJncnMSnys+bpQJfRUzqs9hnA81OAA3hCuQ==}
     engines: {node: '>=14'}
+    hasBin: true
 
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
@@ -1681,6 +1692,14 @@ snapshots:
 
   '@babel/helper-validator-identifier@7.27.1':
     optional: true
+
+  '@croffledev/coblocks-stage-core@1.0.0': {}
+
+  '@croffledev/coblocks-stage-react@1.0.0(react-dom@19.1.1(react@19.1.1))(react@19.1.1)':
+    dependencies:
+      '@croffledev/coblocks-stage-core': link:packages/core
+      react: 19.1.1
+      react-dom: 19.1.1(react@19.1.1)
 
   '@csstools/color-helpers@5.0.2': {}
 

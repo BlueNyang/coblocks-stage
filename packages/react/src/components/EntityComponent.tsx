@@ -6,7 +6,7 @@ import {
   TileData,
   TileDefinition,
   Direction,
-} from "@coblocks-stage/core";
+} from "@croffledev/coblocks-stage-core";
 import React, { type JSX } from "react";
 
 export default function EntityComponent({

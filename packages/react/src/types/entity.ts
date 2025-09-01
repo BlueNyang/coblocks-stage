@@ -1,4 +1,4 @@
-import { EntityDefinition, EntityData } from "@coblocks-stage/core";
+import { EntityDefinition, EntityData } from "@croffledev/coblocks-stage-core";
 
 export interface EntityComponentProps {
   entityDefinition: EntityDefinition;
