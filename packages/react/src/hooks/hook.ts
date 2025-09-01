@@ -38,7 +38,12 @@ export const useCodeExecutor = (): UseCodeExecutionResult => {
   useEffect(() => {
     console.log("[Stage Hook] Initializing worker");
 
-    const worker = WorkerFactory.createWorker();
+    const worker = new Worker(
+      new URL("@croffledev/coblocks-stage-core/worker", import.meta.url).href,
+      {
+        type: "module",
+      }
+    );
 
     worker.onmessage = (event) => {
       const { type, payload } = event.data;
