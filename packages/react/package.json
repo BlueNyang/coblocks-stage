@@ -1,16 +1,28 @@
 {
-  "name": "@coblocks-stage/react",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "name": "@croffledev/coblocks-stage-react",
+  "version": "1.0.2",
+  "description": "Stage React Component for coblocks",
+  "author": "BlueNyang",
+  "main": "dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "rollup -c"
+  },
   "dependencies": {
-    "@coblocks-stage/core": "workspace:*",
+    "@croffledev/coblocks-stage-core": "^1.0.1",
     "react": "^19.1.1"
   },
   "devDependencies": {
@@ -18,16 +30,30 @@
     "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-typescript": "^12.1.4",
-    "@types/react": "^19.1.9",
-    "@types/react-dom": "^19.1.7",
-    "rollup": "^4.45.1",
-    "rollup-plugin-dts": "^6.2.1",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "rollup": "^4.50.0",
+    "rollup-plugin-dts": "^6.2.3",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "tsup": "^8.5.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.2"
   },
   "peerDependencies": {
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
+  },
+  "license": "MIT",
+  "keywords": [
+    "coblocks",
+    "stage",
+    "library",
+    "react",
+    "component"
+  ],
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

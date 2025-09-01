@@ -43,6 +43,27 @@ export default [
   },
   {
     cache: false,
+    input: "src/workers/main.worker.ts",
+    output: {
+      file: "dist/main.worker.js",
+      format: "esm",
+      sourcemap: false,
+    },
+    plugins: [
+      resolve(),
+      commonjs(),
+      typescript({
+        tsconfig: "./tsconfig.json",
+        declaration: false,
+      }),
+      terser(),
+      alias({
+        entries: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
+      }),
+    ],
+  },
+  {
+    cache: false,
     input: "src/index.ts",
     output: {
       file: "dist/index.d.ts",

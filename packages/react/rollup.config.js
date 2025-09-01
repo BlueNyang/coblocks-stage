@@ -10,38 +10,55 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-export default {
-  input: "src/index.ts",
-  cache: cache,
-  output: [
-    {
-      file: "dist/index.js",
-      format: "cjs",
-      sourcemap: true,
-      exports: "named",
-    },
-    {
-      file: "dist/index.esm.js",
-      format: "esm",
-      sourcemap: true,
-    },
-  ],
-  plugins: [
-    alias({
-      entries: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
-    }),
-    resolve({
-      browser: true,
-      preferBuiltins: false,
-    }),
-    commonjs(),
-    peerDepsExternal(), // React를 external로 처리
-    typescript({
-      tsconfig: "./tsconfig.json",
-      declaration: false, // tsc로 따로 생성
-      declarationMap: false,
-      outputToFilesystem: true,
-    }),
-  ],
-  external: ["@coblocks-stage/core", "react", "react-dom"],
-};
+export default [
+  {
+    cache: false,
+    input: "src/index.ts",
+    output: [
+      {
+        file: "dist/index.mjs",
+        format: "esm",
+        sourcemap: true,
+      },
+      {
+        file: "dist/index.cjs",
+        format: "cjs",
+        sourcemap: true,
+      },
+    ],
+    plugins: [
+      peerDepsExternal(), // React를 external로 처리
+      alias({
+        entries: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
+      }),
+      resolve({
+        browser: true,
+        preferBuiltins: false,
+      }),
+      commonjs(),
+      typescript({
+        tsconfig: "./tsconfig.json",
+        declaration: false,
+        jsx: "react-jsx",
+      }),
+    ],
+    external: ["@croffledev/coblocks-stage-core", "react", "react-dom"],
+  },
+  {
+    input: "src/index.ts",
+    output: [
+      {
+        file: "dist/index.d.ts",
+        format: "esm",
+      },
+    ],
+    plugins: [
+      alias({
+        entries: [{ find: "@", replacement: path.resolve(__dirname, "src") }],
+      }),
+      dts({
+        tsconfig: "./tsconfig.json",
+      }),
+    ],
+  },
+];

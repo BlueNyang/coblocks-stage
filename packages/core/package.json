@@ -1,6 +1,6 @@
 {
-  "name": "@coblocks-stage/core",
-  "version": "0.3.0",
+  "name": "@croffledev/coblocks-stage-core",
+  "version": "1.0.1",
   "description": "Stage lib for coblocks",
   "author": "BlueNyang",
   "main": "dist/index.js",
@@ -9,9 +9,13 @@
   "type": "module",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
+      "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "types": "./dist/index.d.ts"
+    },
+    "./worker": {
+      "import": "./dist/main.worker.js",
+      "require": "./dist/main.worker.js"
     }
   },
   "files": [
